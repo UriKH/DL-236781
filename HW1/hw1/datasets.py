@@ -20,7 +20,9 @@ def random_labelled_image(
     # TODO:
     #  Implement according to the docstring description.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    # TODO: check valid parameters
+    image = torch.randint(low=low, high=high, size=shape, dtype=dtype)
+    label = torch.randint(0, num_classes, (1,)).item()
     # ========================
     return image, label
 
@@ -36,16 +38,17 @@ def torch_temporary_seed(seed: int):
     #  Implement this context manager as described.
     #  See torch.random.get/set_rng_state(), torch.random.manual_seed().
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    # TODO: check valid parameters
+    prev = torch.random.get_rng_state()
     # ========================
     try:
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        torch.random.manual_seed(seed)
         # ========================
         yield
     finally:
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        torch.random.set_rng_state(prev)
         # ========================
 
 
@@ -82,7 +85,11 @@ class RandomImageDataset(Dataset):
         #  the random state outside this method.
         #  Raise a ValueError if the index is out of range.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        if (index < 0 or index >= self.num_samples):
+            raise ValueError()
+        with torch_temporary_seed(index):
+            image, label = random_labelled_image(shape=self.image_dim, num_classes=self.num_classes)
+        return image, label
         # ========================
 
     def __len__(self):
@@ -90,7 +97,7 @@ class RandomImageDataset(Dataset):
         :return: Number of samples in this dataset.
         """
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        return self.num_samples
         # ========================
 
 
