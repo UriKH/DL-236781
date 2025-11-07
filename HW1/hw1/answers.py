@@ -10,7 +10,10 @@ math (delimited with $$).
 
 part1_q1 = r"""
 **Your answer:**
-
+1. false. 
+2. false.
+3. true.
+4. false.
 
 Write your answer using **markdown** and $\LaTeX$:
 ```python
@@ -23,7 +26,7 @@ An equation: $e^{i\pi} -1 = 0$
 
 part1_q2 = r"""
 **Your answer:**
-
+he is dumb.
 
 Write your answer using **markdown** and $\LaTeX$:
 ```python
