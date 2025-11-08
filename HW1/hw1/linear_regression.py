@@ -32,7 +32,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         y_pred = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred = X @ self.weights_
         # ========================
 
         return y_pred
@@ -51,7 +51,10 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         w_opt = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        n_features = X.shape[1]
+        I = np.eye(n_features)
+        I[0, 0] = 0
+        w_opt = (np.linalg.inv(X.T @ X + self.reg_lambda * I) @ (X.T @ y)
         # ========================
 
         self.weights_ = w_opt
@@ -100,7 +103,8 @@ class BiasTrickTransformer(BaseEstimator, TransformerMixin):
 
         xb = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        ones = np.ones((X.shape[0], 1))
+        xb = np.hstack([ones, X])
         # ========================
 
         return xb
@@ -163,7 +167,13 @@ def top_correlated_features(df: DataFrame, target_feature, n=5):
     # TODO: Calculate correlations with target and sort features by it
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+
+    corrs = [(c, abs(df[target_feature].corr(df[c]))) for c in df.columns if c != target_feature]
+    corrs.sort(key=lambda t: t[1], reverse=True)
+    
+    top_n_corr = [corr for _, corr in corrs][:n]
+    top_n_features = [feat for feat, _ in corrs][:n]
+    
     # ========================
 
     return top_n_features, top_n_corr
@@ -179,7 +189,7 @@ def mse_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement MSE using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    mse = np.mean((y - y_pred) ** 2)
     # ========================
     return mse
 
@@ -194,7 +204,9 @@ def r2_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement R^2 using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    e = y - y_pred
+    mu = y.mean()
+    r2 = 1 - ((np.linalg.norm(e, ord=2) ** 2) / (np.linalg.norm(y - mu, 2) ** 2))
     # ========================
     return r2
 
