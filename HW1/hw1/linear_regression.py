@@ -51,10 +51,12 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         w_opt = None
         # ====== YOUR CODE: ======
-        n_features = X.shape[1]
-        I = np.eye(n_features)
-        I[0, 0] = 0
-        w_opt = (np.linalg.inv(X.T @ X + self.reg_lambda * I) @ (X.T @ y)
+        N, d = X.shape    
+        R = np.eye(d, dtype=X.dtype)
+        R[0, 0] = 0
+    
+        A = X.T @ X + (N * self.reg_lambda) * R
+        w_opt = np.linalg.solve(A, X.T @ y)
         # ========================
 
         self.weights_ = w_opt
@@ -80,7 +82,12 @@ def fit_predict_dataframe(
     """
     # TODO: Implement according to the docstring description.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    if not feature_names:
+        feature_names = list(df.columns)
+        feature_names.remove(target_name)
+    X = df[feature_names].to_numpy()
+    y = df[target_name].to_numpy()
+    y_pred = model.fit_predict(X, y)
     # ========================
     return y_pred
 
@@ -121,7 +128,7 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         # TODO: Your custom initialization, if needed
         # Add any hyperparameters you need and save them as above
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
 
     def fit(self, X, y=None):
@@ -143,7 +150,11 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
 
         X_transformed = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        from sklearn.preprocessing import PolynomialFeatures
+        X_transformed = np.copy(X)
+        X_transformed[:, 0] = np.log(X_transformed[:, 0])
+        X_transformed[:, 12] = np.log(X_transformed[:, 12])
+        X_transformed = np.delete(X_transformed, (3), axis=1)
         # ========================
 
         return X_transformed
@@ -206,7 +217,7 @@ def r2_score(y: np.ndarray, y_pred: np.ndarray):
     # ====== YOUR CODE: ======
     e = y - y_pred
     mu = y.mean()
-    r2 = 1 - ((np.linalg.norm(e, ord=2) ** 2) / (np.linalg.norm(y - mu, 2) ** 2))
+    r2 = 1 - ((np.linalg.norm(e, 2) ** 2) / (np.linalg.norm(y - mu, 2) ** 2))
     # ========================
     return r2
 
@@ -239,7 +250,9 @@ def cv_best_hyperparams(
     #  - You can use MSE or R^2 as a score.
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    from sklearn.model_selection import cross_validate
+    model = cross_validate(model, X, y, scoring=mse_score, cv=k_folds, params={'reg_lambda': lambda_range}, return_estimator=True)
+    best_params=model.get_params()
     # ========================
 
     return best_params
