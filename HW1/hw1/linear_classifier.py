@@ -106,6 +106,7 @@ class LinearClassifier(object):
 
             # ====== YOUR CODE: ======
             for x, y in dl_train:
+                # TODO: remove the bias trick here!
                 y_pred, x_pred = self.predict(x)
                 loss = loss_fn(x, y, x_pred, y_pred) + weight_decay / 2 * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
                 
@@ -121,7 +122,7 @@ class LinearClassifier(object):
                 y_pred, x_pred = self.predict(x)
                 valid_acc += self.evaluate_accuracy(y, y_pred)
                 valid_loss += loss_fn(x, y, x_pred, y_pred) + weight_decay / 2 * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
-
+            # TODO: devide by num of batches not sizeof dataset (or just count the number of correct classifications!)
             train_res.accuracy.append(total_correct / len(dl_train))
             train_res.loss.append(average_loss / len(dl_train))
 
@@ -154,7 +155,7 @@ class LinearClassifier(object):
         w = self.weights
         if has_bias:
             w = w[1:, :]
-        w_images = w.view(-1, C, H, W)
+        w_images = w.T.view(-1, C, H, W)
         # ========================
 
         return w_images
@@ -167,6 +168,7 @@ def hyperparams():
     #  Manually tune the hyperparameters to get the training accuracy test
     #  to pass.
     # ====== YOUR CODE: ======
+    # TODO: try something around weight_std=0.015, lr = 0.01 weight_decay=0.006
     hp['weight_std'] = 0.005
     hp['weight_decay'] = 0.003
     hp['learn_rate'] = 0.004
