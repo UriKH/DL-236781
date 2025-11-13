@@ -53,10 +53,10 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
         # ====== YOUR CODE: ======
         N, d = X.shape    
         R = np.eye(d, dtype=X.dtype)
-        R[0, 0] = 0
-    
+        R[0,0] = 0 # avoiding regularization on the bias term
+        
         A = X.T @ X + (N * self.reg_lambda) * R
-        w_opt = np.linalg.solve(A, X.T @ y)
+        w_opt = np.linalg.pinv(A) @ X.T @ y    # using np.pinv() for stability and avoiding singular matrix case
         # ========================
 
         self.weights_ = w_opt
@@ -150,21 +150,16 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
 
         X_transformed = None
         # ====== YOUR CODE: ======
-        # X_transformed = np.copy(X)
-        # X_transformed[:, 0] = np.log(X_transformed[:, 0])
-        # X_transformed[:, 12] = np.log(X_transformed[:, 12])
-        # X_transformed = np.delete(X_transformed, (3), axis=1)
-
-        Xt = X.astype(float, copy=True)
-        Xt[:, 0] = np.log1p(Xt[:, 0])
+        # Xt = X[:, 1:]
+        Xt = X.copy()
+        Xt[:, 0] = np.log(np.maximum(Xt[:, 0], 1e-12))
         Xt[:, 12] = np.log(np.maximum(Xt[:, 12], 1e-12))
         Xt = np.delete(Xt, 3, axis=1)
 
-        if self.degree and self.degree > 1:
-            poly = PolynomialFeatures(degree=self.degree, include_bias=False)
-            X_transformed = poly.fit_transform(Xt)
-        else:
-            X_transformed = Xt
+        poly = PolynomialFeatures(degree=self.degree, include_bias=False)
+        X_transformed = poly.fit_transform(Xt)
+        # X_transformed = np.hstack([X[:, :1], Xt])
+        
         # ========================
 
         return X_transformed
@@ -266,7 +261,6 @@ def cv_best_hyperparams(
     degree_keys = [k for k in all_params.keys() if k.endswith("degree")]
     lambda_keys = [k for k in all_params.keys() if k.endswith("reg_lambda")]
 
-    # Usually there will be exactly one of each; take the first match
     degree_key = degree_keys[0]
     lambda_key = lambda_keys[0]
 
@@ -275,7 +269,6 @@ def cv_best_hyperparams(
         lambda_key: lambda_range,
     }
 
-    # Use neg_mean_squared_error so higher is better
     grid = GridSearchCV(
         estimator=model,
         param_grid=param_grid,
@@ -284,7 +277,6 @@ def cv_best_hyperparams(
     )
     grid.fit(X, y)
 
-    # Return only the searched params with their best values
     best_params = {
         degree_key: grid.best_params_[degree_key],
         lambda_key: grid.best_params_[lambda_key],
