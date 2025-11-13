@@ -67,9 +67,7 @@ class LinearClassifier(object):
 
         acc = None
         # ====== YOUR CODE: ======
-        tensor = y - y_pred
-        err = torch.count_nonzero(tensor)
-        acc = 1 - err.float() / tensor.numel()
+        acc = (y == y_pred).sum() / len(y)
         # ========================
 
         return acc * 100
@@ -106,9 +104,8 @@ class LinearClassifier(object):
 
             # ====== YOUR CODE: ======
             for x, y in dl_train:
-                # TODO: remove the bias trick here!
                 y_pred, x_pred = self.predict(x)
-                loss = loss_fn(x, y, x_pred, y_pred) + weight_decay / 2 * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
+                loss = loss_fn(x, y, x_pred, y_pred) + (weight_decay / 2) * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
                 
                 grad = loss_fn.grad() + weight_decay * self.weights
                 self.weights -= learn_rate * grad
@@ -121,8 +118,7 @@ class LinearClassifier(object):
             for x, y in dl_valid: 
                 y_pred, x_pred = self.predict(x)
                 valid_correct += (y_pred == y).sum()
-                valid_loss += loss_fn(x, y, x_pred, y_pred) + weight_decay / 2 * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
-            # TODO: devide by num of batches not sizeof dataset (or just count the number of correct classifications!)
+                valid_loss += loss_fn(x, y, x_pred, y_pred) + (weight_decay / 2) * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
             train_res.accuracy.append(total_correct / len(dl_train))
             train_res.loss.append(average_loss / len(dl_train))
 

@@ -38,7 +38,6 @@ def torch_temporary_seed(seed: int):
     #  Implement this context manager as described.
     #  See torch.random.get/set_rng_state(), torch.random.manual_seed().
     # ====== YOUR CODE: ======
-    # TODO: check valid parameters
     prev = torch.random.get_rng_state()
     # ========================
     try:
