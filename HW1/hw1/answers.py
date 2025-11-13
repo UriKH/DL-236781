@@ -105,6 +105,14 @@ We can see that the train accuracy \( ≈ 92\% \) is consistently a bit higher t
 part3_q1 = r"""
 *Your answer:*
 
+The ideal pattern to see in a residual plot should be many points scattered around 0 on the $y-\hat{y}$ axis within a small standard devietion from it.
+We would also prefer the number of outliers (i.e. far from $y-\hat{y} = 0$) to be as small as possible.
+
+Based on the residual plots produced in top 5 features, we can say that the fitness of the trained model is pretty good but could possibly be better: most residuals are centered around 0 and within a standard deviation of about 5.
+
+In the final plot we can see that after CV, the residuals are tighter around 0 with fewer outliers meaning the model fits the data better. Note that the standard deviation in this case is around 2.5 - two times smaller than in the other graph.
+
+## TODO: COMPARE WITH SOMEONE - NOT SURE WE LOOKED ON THE RIGHT GRAPHS!!!!
 """
 
 # Write your answer using *markdown* and $\LaTeX$:
@@ -119,9 +127,7 @@ part3_q2 = r"""
 
 ### Answer 2.1
 After adding non-linear features to our data the regression model is still a linear model.
-After adding non-linear features we get get a new feature vector: $\phi (x) = [ \phi (x_1), \phi (x_2), \dots, \phi (x_n)]$
-
-#### I think we should remove the verctor itself as I think it might be not totally accurate notation... 
+After adding non-linear features we get get a new feature vector: $\phi (x)$
 
 The model prediction is given using: $ \hat{y} = w^\top \phi (x) + b $
 
@@ -135,24 +141,26 @@ Yes.
 We learned in intro to ML that using the kernel trick, specifically the RBF kernel we could achieve this goal.
 
 RBF kernel is a special function, given to sample vectors $x_i, x_j$ computes the matrix $K$ given by: $$K_{i,j} = K(x_i, x_j) = e^{-\gamma || x_j - x_i||^2 }$$
-This is done using the mapping function $\phi(\mathbb{x})$ which maps the vector to a new infinite feature space (which is not needed due to the kernel trick).
+This is done using the mapping function $\phi(\textbf{x})$ which maps the vector to a new infinite feature space (which is not needed due to the kernel trick).
 
-This feature mapping is so powerful it could allow us match any function $f(x)$.
+This feature mapping is so powerful it could allow us match any function $f(x)$ given a finite amount of points {(x_i,y_i)}_{i=1}^n such that $f(x_i)=y_i$:
 
-Note that $K \succ 0$ (i.e. K is PD) therefore it doesn't have nonzero eigenvalues thus fully ranked -> invertible.
+Note that $K \succ 0$ (i.e. K is PD) therefore it doesn't have zero eigenvalues thus fully ranked -> invertible.
 
 The solution for this regression problem is therefore $w = K^{-1}y$.
 
-We can use these weights later for prediction by creating again a matrix $K'$ 
+We can use these weights later for prediction by creating $k'(x)$ using vectors from the training set denoted $v_j$: 
+$$ k'(x)_i = v_j^T x \Longrightarrow \hat{y} = w^T k'(x) $$
 
 
 ### Answer 2.3
 
-A linear classification model defines a hyperplane W representing the decision boundary such that: $ \hat{y} = sign(w^\top x + b) $.
+A linear classification model defines a hyperplane W representing the decision boundary such that: $$ \hat{y} = \text{sign}(w^\top x + b) $$
 
-Adding non-linear features transform the decision boundary to $ \hat{y} = sign(w^\top \phi (x) + b) $.
+Adding non-linear features transform the decision boundary to:
+$$ \hat{y} = \text{sign}(w^\top \phi (x) + b) $$
 
-When we are looking in the feature space, the decision boundary is still a hyperplane. But, when we are looking back in terms of the original input, it is no longer a hyperplane, which makes feature mapping so powerful.
+When we are looking in the feature space (dimension of $\text{Img}(\phi(x))$), the decision boundary is still a hyperplane. But, when looking back in terms of the original input, it is no longer a hyperplane. This is what makes feature mapping so powerful.
 """
 
 # Write your answer using *markdown* and $\LaTeX$:
