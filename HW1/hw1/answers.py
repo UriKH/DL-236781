@@ -10,15 +10,16 @@ math (delimited with $$).
 
 part1_q1 = r"""
 **Your answer:**
-1. false. 
+1. False. 
 Not every disjoint split is equally useful. The train and test sets should be balanced and representative of the true data distribution.
-For example, if a training set contains only cat images while the test set includes both cats and dogs the model wont learn the “dog” class, since we cannot learn what we dont see and will fail to generalize.
+For example, assume we want to train a cat image binary classifier, if the model will only be trained on the 0 labeled images (images which are not of cats), the model will not be able to recognize a cat on the test set well. The model won't be able to generalize - i.e. to learn about cat images. 
 
-2. false.
-The test set must remain untouched during cross validation. Letting the test set influences any decision will causes leakage, overfitting to the test and biased estimate of generalization.
+2. False.
+The test set must remain untouched during cross validation. Letting the test set influence any decision will causes leakage: overfitting to the test and biased estimate of generalization.
 
-3. true.
-In cross validation, each fold’s validation performance is indeed a proxy for the model’s generalization beacuse it mimics training and evaluating new sampels.
+3. True.
+In cross validation, each fold’s validation performance is indeed a proxy for the model’s generalization beacuse it mimics training and then evaluating new sampels (test-like set).
+
 4. false.
 """
 
@@ -31,7 +32,8 @@ In cross validation, each fold’s validation performance is indeed a proxy for 
 
 part1_q2 = r"""
 **Your answer:**
-His approach isnt justified. When he chooses the value of $\lambda$ based on the test set performance, he is letting the test set influence the model decisions. That turns the test set into the validation set, causing data leakage and biased estimate of generalization.
+His approach isn't justified. When he chooses the value of $\lambda$ based on the test set performance, he is letting the test set influence the model's decisions.
+This treatment is tipical in the case of cross-validation where instead of the test set we use a dedicated validation set (and many times we even have different "validation sets" i.e. kfold cross validaiton). In this case, that turns the test set into a singular validation set, causing overfiting on the test set and biased estimation of generalization.
 """
 
 # Write your answer using **markdown** and $\LaTeX$:
@@ -47,7 +49,15 @@ His approach isnt justified. When he chooses the value of $\lambda$ based on the
 part2_q1 = r"""
 **Your answer:**
 If we allow $\Delta < 0$ for the SVM loss $L(\mat{W})$ we penalize our model only if the wrong score exceeds the correct score by more than $|{\Delta}|$ since:
-$\text{max(0, }\Delta + s{ij} - s{iy_i}\text{)} > 0 \iff s_{ij} - s_{iy_i} > -\Delta \iff s_{ij} - s_{iy_i} > |\Delta|$
+$$\text{max(0, }\Delta + {w_j}^\top x_i - {w_{y_i}}^\top x_i\text{)} > 0 \iff {w_j}^\top x_i - {w_{y_i}}^\top x_i > -\Delta \iff {w_j}^\top x_i - {w_{y_i}}^\top x_i > |\Delta|$$
+
+In other words:
+
+First note that ${w_j}^\top x_i$ is the score prediction for sample $x_i$ for class $j$ and ${w_{y_i}}^\top x_i$ is the score for sample $i$ to be in the correct class $y_i$. 
+
+This means that for a good model we want ${w_j}^\top x_i < {w_{y_i}}^\top x_i \Rightarrow {w_j}^\top x_i - {w_{y_i}}^\top x_i < 0$. 
+
+Adding a negaive constant to the aformentioned term ($\Delta < 0$) means we don't penalize for wrong classificaion in the case: $ ({w_j}^\top x_i >) \,\, {w_j}^\top x_i + \Delta > {w_{y_i}}^\top x_i$
 """
 
 # Write your answer using **markdown** and $\LaTeX$:
@@ -93,41 +103,119 @@ We can see that the train accuracy \( ≈ 92\% \) is consistently a bit higher t
 # Part 3 answers
 
 part3_q1 = r"""
-**Your answer:**
+*Your answer:*
 
 """
 
-# Write your answer using **markdown** and $\LaTeX$:
-# ```python
+# Write your answer using *markdown* and $\LaTeX$:
+# python
 # # A code block
 # a = 2
-# ```
+# 
 # An equation: $e^{i\pi} -1 = 0$
 
 part3_q2 = r"""
-**Your answer:**
+*Your answer:*
 
+### Answer 2.1
+After adding non-linear features to our data the regression model is still a linear model.
+After adding non-linear features we get get a new feature vector: $\phi (x) = [ \phi (x_1), \phi (x_2), \dots, \phi (x_n)]$
+
+#### I think we should remove the verctor itself as I think it might be not totally accurate notation... 
+
+The model prediction is given using: $ \hat{y} = w^\top \phi (x) + b $
+
+This is linear in the sense that the function given by the regression is a hyperplane defined by $w$ and $b$ in $d = \dim(\phi(x))$ dimensions.
+
+This could be viewed also as that for all $i$: $\hat{y_i} = w_i \cdot \phi (x)_i + b_i$ is a non-linear function of the input x.
+
+### Answer 2.2
+
+Yes. 
+We learned in intro to ML that using the kernel trick, specifically the RBF kernel we could achieve this goal.
+
+RBF kernel is a special function, given to sample vectors $x_i, x_j$ computes the matrix $K$ given by: $$K_{i,j} = K(x_i, x_j) = e^{-\gamma || x_j - x_i||^2 }$$
+This is done using the mapping function $\phi(\mathbb{x})$ which maps the vector to a new infinite feature space (which is not needed due to the kernel trick).
+
+This feature mapping is so powerful it could allow us match any function $f(x)$.
+
+Note that $K \succ 0$ (i.e. K is PD) therefore it doesn't have nonzero eigenvalues thus fully ranked -> invertible.
+
+The solution for this regression problem is therefore $w = K^{-1}y$.
+
+We can use these weights later for prediction by creating again a matrix $K'$ 
+
+
+### Answer 2.3
+
+A linear classification model defines a hyperplane W representing the decision boundary such that: $ \hat{y} = sign(w^\top x + b) $.
+
+Adding non-linear features transform the decision boundary to $ \hat{y} = sign(w^\top \phi (x) + b) $.
+
+When we are looking in the feature space, the decision boundary is still a hyperplane. But, when we are looking back in terms of the original input, it is no longer a hyperplane, which makes feature mapping so powerful.
 """
 
-# Write your answer using **markdown** and $\LaTeX$:
-# ```python
+# Write your answer using *markdown* and $\LaTeX$:
+# python
 # # A code block
 # a = 2
-# ```
+# 
 # An equation: $e^{i\pi} -1 = 0$
 
 part3_q3 = r"""
-**Your answer:**
+*Your answer:*
+1. $x$ and $y$, both $\sim \text{Uniform}(0,1)$ independently, therefore the expected value is:
 
+$
+\mathbb{E}_{x,y}[|y-x|] = \int_0^1 \big( \int_0^1 |y-x| \, dx \big) \, dy 
+= \int_0^1 \big( \int_0^y y-x \, dx + \int_y^1 x-y \, dx \big) \, dy 
+= \int_0^1 \left( \left[ yx - \frac{x^2}{2} \right]{x=0}^{x=y}+ \left[ \frac{x^2}{2} - yx \right]{x=y}^{x=1} \right) \, dy
+= \int_0^1 \left( y^2 - \frac{y^2}{2} + \frac{1}{2} - y - \left( \frac{y^2}{2} - y^2 \right) \right) \, dy
+$
+
+$
+= \int_0^1 \left( \frac{y^2}{2} + \frac{1}{2} - y + \frac{y^2}{2} \right) \, dy
+= \int_0^1 \left( y^2 - y + \frac{1}{2} \right) \, dy
+= \left[ \frac{y^3}{3} - \frac{y^2}{2} + \frac{y}{2} \right]_0^1
+= \frac{1}{3} - \frac{1}{2} + \frac{1}{2}
+= \frac{1}{3}.
+$
+
+
+2. $x$ is a constant, therefore:
+
+$
+\mathbb{E}_x[|\hat{x}-x|] = \int_0^1 |\hat{x}-x| \, dx
+= \int_0^{\hat{x}} (\hat{x}-x) \, dx + \int_{\hat{x}}^1 (x-\hat{x}) \, dx
+$
+$
+= \left[ \hat{x}x - \frac{x^2}{2} \right]0^{\hat{x}} + \left[ \frac{x^2}{2} - \hat{x}x \right]{\hat{x}}^1
+= \hat{x}^2 - \frac{\hat{x}^2}{2} + \frac{1}{2} - \hat{x} - \left( \frac{\hat{x}^2}{2} - \hat{x}^2 \right)
+= \hat{x}^2 - \hat{x} + \frac{1}{2}.
+$
+
+
+3. We can drop the value of the scalar of the polynomial because the value of $\hat{x}$ that minimizes the polynomial is the same, regardless of adding a constant:
+
+$
+\frac{d}{d\hat{x}} \left( \hat{x}^2 - \hat{x} + \frac{1}{2} \right)
+= 2\hat{x} - 1
+= \frac{d}{d\hat{x}} \left( \hat{x}^2 - \hat{x} \right) \Rightarrow
+$
+
+$
+\arg\min_{\hat{x}} \left( \hat{x}^2 - \hat{x} + \frac{1}{2} \right)
+= \arg\min_{\hat{x}} \left( \hat{x}^2 - \hat{x} \right).
+$
 """
 
-# Write your answer using **markdown** and $\LaTeX$:
-# ```python
+# Write your answer using *markdown* and $\LaTeX$:
+# python
 # # A code block
 # a = 2
-# ```
+# 
 # An equation: $e^{i\pi} -1 = 0$
 
 # ==============
 
-# ==============
+# ==============

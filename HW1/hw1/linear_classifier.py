@@ -103,6 +103,9 @@ class LinearClassifier(object):
             #     using the weight_decay parameter.
 
             # ====== YOUR CODE: ======
+            total_train = 0
+            total_validation = 0
+            
             for x, y in dl_train:
                 y_pred, x_pred = self.predict(x)
                 loss = loss_fn(x, y, x_pred, y_pred) + (weight_decay / 2) * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
@@ -112,6 +115,7 @@ class LinearClassifier(object):
 
                 average_loss += loss
                 total_correct += (y_pred == y).sum()
+                total_train += y.size(0)
 
             valid_correct = 0
             valid_loss = 0
@@ -119,10 +123,11 @@ class LinearClassifier(object):
                 y_pred, x_pred = self.predict(x)
                 valid_correct += (y_pred == y).sum()
                 valid_loss += loss_fn(x, y, x_pred, y_pred) + (weight_decay / 2) * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
-            train_res.accuracy.append(total_correct / len(dl_train))
+                total_validation += y.size(0)
+            train_res.accuracy.append(total_correct / total_train)
             train_res.loss.append(average_loss / len(dl_train))
 
-            valid_res.accuracy.append(valid_correct / len(dl_valid))
+            valid_res.accuracy.append(valid_correct / total_validation)
             valid_res.loss.append(valid_loss / len(dl_valid))
             
                 
@@ -165,8 +170,11 @@ def hyperparams():
     #  to pass.
     # ====== YOUR CODE: ======
     # TODO: try something around weight_std=0.015, lr = 0.01 weight_decay=0.006
-    hp['weight_std'] = 0.005
-    hp['weight_decay'] = 0.003
+    # hp['weight_std'] = 0.005
+    # hp['weight_decay'] = 0.003
+    # hp['learn_rate'] = 0.007
+    hp['weight_std'] = 0.001
+    hp['weight_decay'] = 0.005
     hp['learn_rate'] = 0.007
     # ========================
 
