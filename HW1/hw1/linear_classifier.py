@@ -114,19 +114,19 @@ class LinearClassifier(object):
                 self.weights -= learn_rate * grad
 
                 average_loss += loss
-                total_correct += self.evaluate_accuracy(y, y_pred)
+                total_correct += (y_pred == y).sum()
 
-            valid_acc = 0
+            valid_correct = 0
             valid_loss = 0
             for x, y in dl_valid: 
                 y_pred, x_pred = self.predict(x)
-                valid_acc += self.evaluate_accuracy(y, y_pred)
+                valid_correct += (y_pred == y).sum()
                 valid_loss += loss_fn(x, y, x_pred, y_pred) + weight_decay / 2 * torch.linalg.matrix_norm(self.weights, ord='fro') ** 2
             # TODO: devide by num of batches not sizeof dataset (or just count the number of correct classifications!)
             train_res.accuracy.append(total_correct / len(dl_train))
             train_res.loss.append(average_loss / len(dl_train))
 
-            valid_res.accuracy.append(valid_acc / len(dl_valid))
+            valid_res.accuracy.append(valid_correct / len(dl_valid))
             valid_res.loss.append(valid_loss / len(dl_valid))
             
                 
@@ -171,7 +171,7 @@ def hyperparams():
     # TODO: try something around weight_std=0.015, lr = 0.01 weight_decay=0.006
     hp['weight_std'] = 0.005
     hp['weight_decay'] = 0.003
-    hp['learn_rate'] = 0.004
+    hp['learn_rate'] = 0.007
     # ========================
 
     return hp
