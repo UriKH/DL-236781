@@ -20,7 +20,10 @@ The test set must remain untouched during cross validation. Letting the test set
 3. True.
 In cross validation, each fold’s validation performance is indeed a proxy for the model’s generalization beacuse it mimics training and then evaluating new sampels (test-like set).
 
-4. false.
+4. True. 
+- When talking about linear regression, injecting noise into the labels could help validate the robustness of the model by making sure it preforms well while not overfitting specific function uniqueonly  to the dataset. 
+This method can help us be more confidant that the model cuptures the true data distribution from which the dataset is sampled from.
+- In classification this doesn't make much sense as we want the model to learn as much as possible from the data. Swaping labels could "confuse" the model. Nonetheless, adding noise to the data (not labels) could help make the model more robust and less sensitive to changes in the input.
 """
 
 # Write your answer using **markdown** and $\LaTeX$:
