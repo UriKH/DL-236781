@@ -24,12 +24,14 @@ In cross validation, each fold’s validation performance is indeed a proxy for 
 
 Suppose that during training we inject noise into the labels means $y' = y + \epsilon$, where $\epsilon$ is 0 mean random noise. Now the loss is given by:
 
-$L_{\text{noise}}(f) = \mathbb{E}\big[(y + \epsilon - f(x))^2\big]
-                     = \mathbb{E}\big[(y - f(x))^2\big] + 2\,\mathbb{E}\big[(y - f(x))\,\epsilon\big] + \mathbb{E}\big[\epsilon^2\big].$
+$$L_{\text{noise}}(f) = \mathbb{E}\big[(y + \epsilon - f(x))^2\big]
+                     = \mathbb{E}\big[(y - f(x))^2\big] + 2\,\mathbb{E}\big[(y - f(x))\,\epsilon\big] + \mathbb{E}\big[\epsilon^2\big].$$
 
 Since $\epsilon$ has mean 0 and is independent of $(x, y)$, we get that $\mathbb{E}\big[(y - f(x))\,\epsilon\big] = 0$, so $L_{\text{noise}}(f) = \mathbb{E}\big[(y - f(x))^2\big] + \mathbb{E}\big[\epsilon^2\big].$
 
-$\mathbb{E}\big[\epsilon^2\big]$ does not depend on $f$, so the function $f$ that minimizes $L_{\text{noise}}(f)$ is exactly the same function that minimizes the original loss. This means that injecting noise into the labels does not a good way to validate robustness. To study robustness we usually inject noise the inputs (or use data augmentation and regularization).
+$\mathbb{E}\big[\epsilon^2\big]$ does not depend on $f$, so the function $f$ that minimizes $L_{\text{noise}}(f)$ is exactly the same function that minimizes the original loss. 
+This means that injecting noise into the labels is not a good way to validate robustness.
+To study robustness we usually inject noise into the inputs (or use data augmentation and regularization).
 """
 
 # 4. True. 
