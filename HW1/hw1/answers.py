@@ -20,11 +20,22 @@ The test set must remain untouched during cross validation. Letting the test set
 3. True.
 In cross validation, each fold’s validation performance is indeed a proxy for the model’s generalization beacuse it mimics training and then evaluating new sampels (test-like set).
 
-4. True. 
-- When talking about linear regression, injecting noise into the labels could help validate the robustness of the model by making sure it preforms well while not overfitting specific function uniqueonly  to the dataset. 
-This method can help us be more confidant that the model cuptures the true data distribution from which the dataset is sampled from.
-- In classification this doesn't make much sense as we want the model to learn as much as possible from the data. Swaping labels could "confuse" the model. Nonetheless, adding noise to the data (not labels) could help make the model more robust and less sensitive to changes in the input.
+4. False. Assume we have a linear regression model that learns a function $f(x)$ by minimizing $\mathbb{E}\big[(y - f(x))^2\big].$
+
+Suppose that during training we inject noise into the labels means $y' = y + \epsilon$, where $\epsilon$ is 0 mean random noise. Now the loss is given by:
+
+$L_{\text{noise}}(f) = \mathbb{E}\big[(y + \epsilon - f(x))^2\big]
+                     = \mathbb{E}\big[(y - f(x))^2\big] + 2\,\mathbb{E}\big[(y - f(x))\,\epsilon\big] + \mathbb{E}\big[\epsilon^2\big].$
+
+Since $\epsilon$ has mean 0 and is independent of $(x, y)$, we get that $\mathbb{E}\big[(y - f(x))\,\epsilon\big] = 0$, so $L_{\text{noise}}(f) = \mathbb{E}\big[(y - f(x))^2\big] + \mathbb{E}\big[\epsilon^2\big].$
+
+$\mathbb{E}\big[\epsilon^2\big]$ does not depend on $f$, so the function $f$ that minimizes $L_{\text{noise}}(f)$ is exactly the same function that minimizes the original loss. This means that injecting noise into the labels does not a good way to validate robustness. To study robustness we usually inject noise the inputs (or use data augmentation and regularization).
 """
+
+# 4. True. 
+# - When talking about linear regression, injecting noise into the labels could help validate the robustness of the model by making sure it preforms well while not overfitting specific function uniqueonly  to the dataset. 
+# This method can help us be more confidant that the model cuptures the true data distribution from which the dataset is sampled from.
+# - In classification this doesn't make much sense as we want the model to learn as much as possible from the data. Swaping labels could "confuse" the model. Nonetheless, adding noise to the data (not labels) could help make the model more robust and less sensitive to changes in the input.
 
 # Write your answer using **markdown** and $\LaTeX$:
 # ```python
