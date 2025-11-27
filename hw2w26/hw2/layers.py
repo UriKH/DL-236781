@@ -82,7 +82,7 @@ class LeakyReLU(Layer):
 
         # TODO: Implement the LeakyReLU operation.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = torch.maximum(x, self.alpha * x)
         # ========================
 
         self.grad_cache["x"] = x
@@ -96,8 +96,9 @@ class LeakyReLU(Layer):
         x = self.grad_cache["x"]
 
         # TODO: Implement gradient w.r.t. the input x
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # ====== YOUR CODE: ======  
+        mask = (x > 0)
+        dx = torch.where(mask, 1, self.alpha) * dout
         # ========================
 
         return dx
@@ -116,7 +117,7 @@ class ReLU(LeakyReLU):
 
     def __init__(self):
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        super().__init__(0)
         # ========================
 
     def __repr__(self):
@@ -142,7 +143,8 @@ class Sigmoid(Layer):
         # TODO: Implement the Sigmoid function.
         #  Save whatever you need into grad_cache.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = 1/(1+torch.exp(-x))
+        self.grad_cache['x'] = x
         # ========================
 
         return out
@@ -155,7 +157,8 @@ class Sigmoid(Layer):
 
         # TODO: Implement gradient w.r.t. the input x
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        x = self.grad_cache['x']
+        dx = torch.exp(-x)/((1+torch.exp(-x))**2) * dout
         # ========================
 
         return dx
@@ -183,7 +186,8 @@ class TanH(Layer):
         # TODO: Implement the tanh function.
         #  Save whatever you need into grad_cache.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out =  (torch.exp(x)-torch.exp(-x))/(torch.exp(x)+torch.exp(-x))
+        self.grad_cache['out'] = out
         # ========================
 
         return out
@@ -196,7 +200,8 @@ class TanH(Layer):
 
         # TODO: Implement gradient w.r.t. the input x
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = self.grad_cache['out']
+        dx = dout * (1-out**2)
         # ========================
 
         return dx
@@ -224,7 +229,8 @@ class Linear(Layer):
         # Initialize the weights to zero-mean gaussian noise with a standard
         # deviation of `wstd`. Init bias to zero.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.w = torch.normal(0, wstd, size=(self.out_features, self.in_features))
+        self.b = torch.zeros(self.out_features)
         # ========================
 
         # These will store the gradients
@@ -244,7 +250,7 @@ class Linear(Layer):
 
         # TODO: Compute the affine transform
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = x @ self.w.T + self.b
         # ========================
 
         self.grad_cache["x"] = x
@@ -263,7 +269,9 @@ class Linear(Layer):
         #   - db, the gradient of the loss with respect to b
         #  Note: You should ACCUMULATE gradients in dw and db.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.dw += dout.T @ x
+        self.db += torch.sum(dout, axis=0)
+        dx = dout @ self.w
         # ========================
 
         return dx
@@ -304,7 +312,9 @@ class CrossEntropyLoss(Layer):
         # TODO: Compute the cross entropy loss using the last formula from the
         #  notebook (i.e. directly using the class scores).
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        logsumexp = torch.logsumexp(x, dim=1)
+        correct_scores = x[torch.arange(N), y]
+        loss = (-correct_scores + logsumexp).mean()
         # ========================
 
         self.grad_cache["x"] = x
@@ -323,7 +333,16 @@ class CrossEntropyLoss(Layer):
 
         # TODO: Calculate the gradient w.r.t. the input x.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # dx = - y + torch.exp(x) / torch.sum(torch.exp(x))
+        # x_stable: (N, D), y: (N,)
+        logsumexp = torch.logsumexp(x, dim=1, keepdim=True)  # (N, 1)
+        log_probs = x - logsumexp
+        probs = log_probs.exp()  # softmax(x_stable)
+        
+        dx = probs.clone()                          # (N, D)
+        dx[torch.arange(N), y] -= 1.0               # subtract one-hot
+        dx /= N                                     # because of mean over batch
+
         # ========================
 
         return dx
