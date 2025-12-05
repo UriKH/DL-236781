@@ -83,7 +83,12 @@ class Trainer(abc.ABC):
             #  - Use the train/test_epoch methods.
             #  - Save losses and accuracies in the lists above.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            train_result = self.train_epoch(dl_train, **kw)
+            test_result = self.test_epoch(dl_test, **kw)
+            train_loss += train_result.losses
+            test_loss += test_result.losses
+            train_acc.append(train_result.accuracy)
+            test_acc.append(test_result.accuracy)
             # ========================
 
             # TODO:
@@ -94,11 +99,11 @@ class Trainer(abc.ABC):
             #    the checkpoints argument.
             if best_acc is None or test_result.accuracy > best_acc:
                 # ====== YOUR CODE: ======
-                raise NotImplementedError()
+                best_acc = test_result.accuracy
                 # ========================
             else:
                 # ====== YOUR CODE: ======
-                raise NotImplementedError()
+                continue
                 # ========================
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
@@ -288,7 +293,7 @@ class LayerTrainer(Trainer):
         # ====== YOUR CODE: ======
         super().__init__(model)
         self.loss_fn = loss_fn
-        self.opt = optimizer
+        self.optimizer = optimizer
         # ========================
 
     def train_batch(self, batch) -> BatchResult:
@@ -301,14 +306,17 @@ class LayerTrainer(Trainer):
         #  - Calculate number of correct predictions (make sure it's an int,
         #    not a tensor) as num_correct.
         # ====== YOUR CODE: ======
-        res = self.model.forward(X)
-        loss = self.loss_fn(res, y)
+        X = X.view(X.shape[0], -1)
 
-        self.model.zero_grad()
-        self.model.backward(res)
-        self.opt.step()
-        num_correct = int(torch.sum([res == y]))
+        self.optimizer.zero_grad()
+        scores = self.model(X) 
+        loss = self.loss_fn(scores, y) 
+        dscores = self.loss_fn.backward() 
+        self.model.backward(dscores)
+        self.optimizer.step()
 
+        preds = torch.argmax(scores, dim=1)
+        num_correct = int((preds == y).sum().item())
         # ========================
 
         return BatchResult(loss, num_correct)
@@ -318,7 +326,11 @@ class LayerTrainer(Trainer):
 
         # TODO: Evaluate the Layer model on one batch of data.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        X = X.view(X.shape[0], -1)
+        scores = self.model(X)
+        loss = self.loss_fn(scores, y)
+        preds = torch.argmax(scores, dim=1)
+        num_correct = int((preds == y).sum().item())
         # ========================
 
         return BatchResult(loss, num_correct)
