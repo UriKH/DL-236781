@@ -333,16 +333,12 @@ class CrossEntropyLoss(Layer):
 
         # TODO: Calculate the gradient w.r.t. the input x.
         # ====== YOUR CODE: ======
-        # dx = - y + torch.exp(x) / torch.sum(torch.exp(x))
-        # x_stable: (N, D), y: (N,)
-        logsumexp = torch.logsumexp(x, dim=1, keepdim=True)  # (N, 1)
+        logsumexp = torch.logsumexp(x, dim=1, keepdim=True)
         log_probs = x - logsumexp
-        probs = log_probs.exp()  # softmax(x_stable)
-        
-        dx = probs.clone()                          # (N, D)
-        dx[torch.arange(N), y] -= 1.0               # subtract one-hot
-        dx /= N                                     # because of mean over batch
-
+        probs = log_probs.exp()
+        dx = probs.clone()
+        dx[torch.arange(N), y] -= 1.0
+        dx /= N
         # ========================
 
         return dx
@@ -401,7 +397,9 @@ class Sequential(Layer):
         # TODO: Implement the forward pass by passing each layer's output
         #  as the input of the next.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        for l in self.layers:
+            x = l.forward(x, **kw)
+        out = x
         # ========================
 
         return out
@@ -413,7 +411,12 @@ class Sequential(Layer):
         #  Each layer's input gradient should be the previous layer's output
         #  gradient. Behold the backpropagation algorithm in action!
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        layers = list(self.layers)
+        layers.reverse()
+        
+        for l in layers:
+            dout = l.backward(dout)
+        din = dout
         # ========================
 
         return din
@@ -423,7 +426,8 @@ class Sequential(Layer):
 
         # TODO: Return the parameter tuples from all layers.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        for l in self.layers:
+            params += l.params()
         # ========================
 
         return params
@@ -481,7 +485,14 @@ class MLP(Layer):
 
         # TODO: Build the MLP architecture as described.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        feats = [in_features] + list(hidden_features) + [num_classes]
+        
+        for i in range(len(feats) - 1):
+            layers += [
+                Linear(feats[i], feats[i+1]),
+                (ReLU() if activation == 'relu' else Sigmoid())
+            ]
+        layers = layers[:-1]
         # ========================
 
         self.sequence = Sequential(*layers)
