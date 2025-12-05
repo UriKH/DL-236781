@@ -286,7 +286,9 @@ class ClassifierTrainer(Trainer):
 class LayerTrainer(Trainer):
     def __init__(self, model, loss_fn, optimizer):
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        super().__init__(model)
+        self.loss_fn = loss_fn
+        self.opt = optimizer
         # ========================
 
     def train_batch(self, batch) -> BatchResult:
@@ -299,7 +301,14 @@ class LayerTrainer(Trainer):
         #  - Calculate number of correct predictions (make sure it's an int,
         #    not a tensor) as num_correct.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        res = self.model.forward(X)
+        loss = self.loss_fn(res, y)
+
+        self.model.zero_grad()
+        self.model.backward(res)
+        self.opt.step()
+        num_correct = int(torch.sum([res == y]))
+
         # ========================
 
         return BatchResult(loss, num_correct)
