@@ -45,7 +45,28 @@ def mlp_experiment(
     #  Note: use print_every=0, verbose=False, plot=False where relevant to prevent
     #  output from this function.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    mlp = MLP(2, [width] * depth, ['relu'] * (depth - 1) + ['sigmoid'])
+    
+    model = BinaryClassifier(mlp, 1)
+    loss_fn = torch.nn.CrossEntropyLoss()
+
+    # 0.05 0.005 0.1 - 65~
+    lr = 0.05
+    weight_decay = 0.005
+    momentum = 0.1
+    
+    ompimizer = torch.optim.SGD(params=model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
+    trainer = ClassifierTrainer(model, loss_fn, ompimizer)
+    fit_result= trainer.fit(dl_train, dl_valid, num_epochs=n_epochs, print_every=0, verbose=False);
+    test_acc = fit_result.test_acc[-1]
+    thresh = select_roc_thresh(model, *dl_valid.dataset.tensors)
+
+    with torch.no_grad():
+        x_valid, y_valid = dl_valid.dataset.tensors
+        y_scores = model.classify(x_valid)
+        y_pred = (y_scores >= thresh).long().squeeze()
+        valid_acc = (y_pred == y_valid).float().mean().item()
+        valid_acc = 0
     # ========================
     return model, thresh, valid_acc, test_acc
 

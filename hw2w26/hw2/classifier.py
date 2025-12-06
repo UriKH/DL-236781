@@ -226,7 +226,18 @@ def select_roc_thresh(
     fpr, tpr, thresh = None, None, None
     optimal_theresh_idx, optimal_thresh = None, None
     # ====== YOUR CODE: ======
-    fpr, tpr, thresh = roc_curve()
+    import math
+    classified = classifier.classify(x)
+    fpr, tpr, thresh = roc_curve(y, classified)
+
+    optimal_thresh_idx = None
+    best_r = math.inf
+    for i, (fp, tp) in enumerate(zip(fpr, tpr)):
+        r = math.sqrt((1-tp) ** 2 + fp ** 2)
+        if r < best_r:
+            best_r = r
+            optimal_thresh_idx = i
+    optimal_thresh = thresh[optimal_thresh_idx]
     # ========================
 
     if plot:
