@@ -145,7 +145,10 @@ def part3_arch_hp():
     out_activation = "none"  # activation function to apply at the output layer
     # TODO: Tweak the MLP architecture hyperparameters.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    n_layers = 4
+    hidden_dims = 100
+    activation = 'relu'
+    out_activation = 'sigmoid'
     # ========================
     return dict(
         n_layers=n_layers,
@@ -167,7 +170,10 @@ def part3_optim_hp():
     #    What you returns needs to be a callable, so either an instance of one of the
     #    Loss classes in torch.nn or one of the loss functions from torch.nn.functional.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    loss_fn = torch.nn.CrossEntropyLoss()
+    lr = 0.1
+    weight_decay = 0.003
+    momentum = 0.003
     # ========================
     return dict(lr=lr, weight_decay=weight_decay, momentum=momentum, loss_fn=loss_fn)
 
