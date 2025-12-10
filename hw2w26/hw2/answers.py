@@ -11,13 +11,23 @@ math (delimited with $$).
 part1_q1 = r"""
 **Your answer:**
 
+A. X has shape (64, 1024) and Y has shape (64, 512), therefore the Jacobian tensor $\pderiv{\mat{Y}}{\mat{X}}$ will have shape (64, 512, 64, 1024)
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+B. If we view the Jacobian $\pderiv{\mat{Y}}{\mat{X}}$ as a 2D block matrix, we will get $N \times N$ blocks of (out_features × in_features) such that the block (i,j) is $\pderiv{\mat{Y}_i}{\mat{X}_j}$. For a linear layer $Y=XW^T$, each output $\mat{Y}_k$ depends only on its own input sample $\mat{X}_k$ we get:
+\begin{cases}
+    \pderiv{\mat{Y}_i}{\mat{X}_j}=W & i = j\\
+    \pderiv{\mat{Y}_i}{\mat{X}_j}=0 & i \ne j
+\end{cases}
+The structure is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero.
+
+C. 
+
+D. Given the gradient of the output w.r.t. some downstream scalar loss $L$, $\delta\mat{Y} := \pderiv{L}{\mat{Y}}$ we can use the chain rule to calculate the downstream gradient w.r.t. the input ($\delta\mat{X}$) without materializing the Jacobian:
+
+$\delta\mat{X} = \pderiv{L}{\mat{X}} = \pderiv{L}{\mat{Y}} \pderiv{Y}{\mat{X}}$
+
+
+E.
 
 """
 
@@ -106,27 +116,46 @@ An equation: $e^{i\pi} -1 = 0$
 
 part2_q2 = r"""
 **Your answer:**
+Yes, it is possible for the test loss to decrease while the test accuracy also decreases. Cross-entropy loss depends on the predicted probabilities, while accuracy only depends on whether the argmax prediction is correct. For example, suppose we have 2 test samples $\{ x_1, x_2 \}$, both with true label 1.
 
+$$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - {\vectr{y}} \log(\hat{\vec{y}})$$
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+Epoch 1 – 100% accuracy:
 
+$p_1 = (0.49, 0.51)$
+
+$p_2 = (0.49, 0.51)$
+
+$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.51, 0.51) = -log(0.51) = 0.673$
+
+Epoch 2 – 50% accuracy:
+
+$p_1 = (0.01, 0.99)$
+
+$p_2 = (0.51, 0.49)$
+
+$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.49, 0.99) = -log(0.99) = 0.01$
 """
 
 part2_q3 = r"""
 **Your answer:**
+1. Similarities of gradient descent (GD) and stochastic gradient descent (SGD):
 
+(1) Both aim to minimize the same loss function
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+(2) Same update rule $\theta \leftarrow \theta - \eta \cdot gradient$
+
+Differences of gradient descent (GD) and stochastic gradient descent (SGD):
+
+(1) How they compute the gradient - GD uses all data while SGD pick one sample from a uniform distrubution on tha dataset.
+
+(2) Cost - GD goes through all N examples to compute one gradient while SGD computes the gradient w.r.t only one sample, so each step is much faster.
+
+(3) Noise - GD get deterministic path and the loss usually decreases smoothly while in SGD each gradient is noisy (since it is computed on different samples each epoch) and the randomness in the sampling gives different paths.
+
+2. 
+
+3.
 
 """
 
