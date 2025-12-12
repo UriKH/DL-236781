@@ -82,10 +82,12 @@ class CNN(nn.Module):
         # ====== YOUR CODE: ======
         in_channels = self.in_size[0]
         for i, c in enumerate(self.channels):
-            layers += [nn.Conv2d(**self.conv_params, in_channels = in_channels, out_channels = c), 
-                       nn.ReLU(**self.activation_params) if self.activation_type == 'relu' else nn.LeakyReLU(**self.activation_params)]
+            layers += [
+                nn.Conv2d(**self.conv_params, in_channels = in_channels, out_channels = c), 
+                ACTIVATIONS[self.activation_type](**self.activation_params)
+            ]
             if (i + 1) % self.pool_every == 0:
-                layers += [nn.MaxPool2d(**self.pooling_params) if self.pooling_type == 'max' else nn.AvgPool2d(**self.pooling_params)]
+                layers += [POOLINGS[self.pooling_type](**self.pooling_params)]
             in_channels = c
 
         # ========================
@@ -101,38 +103,10 @@ class CNN(nn.Module):
         rng_state = torch.get_rng_state()
         try:
             # ====== YOUR CODE: ======
-            def _pair(x):
-                return x if isinstance(x, tuple) else (x, x)
-            
-            C, H, W = self.in_size
-
-            for layer in self.feature_extractor:
-                if isinstance(layer, nn.Conv2d):
-                    kH, kW = _pair(layer.kernel_size)
-                    sH, sW = _pair(layer.stride)
-                    pH, pW = _pair(layer.padding)
-                    dH, dW = _pair(layer.dilation)
-    
-                    H = (H + 2 * pH - dH * (kH - 1) - 1) // sH + 1
-                    W = (W + 2 * pW - dW * (kW - 1) - 1) // sW + 1
-                    C = layer.out_channels
-    
-                elif isinstance(layer, (nn.MaxPool2d, nn.AvgPool2d)):
-                    kH, kW = _pair(layer.kernel_size)
-    
-                    stride = layer.stride if layer.stride is not None else layer.kernel_size
-                    sH, sW = _pair(stride)
-                    pH, pW = _pair(layer.padding)
-
-                    if isinstance(layer, nn.MaxPool2d):
-                        dH, dW = _pair(layer.dilation)
-                    else:
-                        dH, dW = 1, 1
-    
-                    H = (H + 2 * pH - dH * (kH - 1) - 1) // sH + 1
-                    W = (W + 2 * pW - dW * (kW - 1) - 1) // sW + 1
-    
-            return int(C * H * W)
+            dummy_input = torch.zeros(1, *self.in_size)
+            with torch.no_grad():
+                features = self.feature_extractor(dummy_input)
+            return features.view(1, -1).shape[1]
             # ========================
         finally:
             torch.set_rng_state(rng_state)
@@ -146,8 +120,12 @@ class CNN(nn.Module):
         #  - The last Linear layer should have an output dim of out_classes.
         mlp: MLP = None
         # ====== YOUR CODE: ======
-        activation = nn.ReLU(**self.activation_params) if self.activation_type == 'relu' else nn.LeakyReLU(**self.activation_params)
-        mlp = MLP(in_dim = self._n_features(), dims = self.hidden_dims + [self.out_classes], nonlins = [activation]*len(self.hidden_dims) + [nn.Identity()])
+        activation = ACTIVATIONS[self.activation_type](**self.activation_params)
+        mlp = MLP(
+            in_dim = self._n_features(),
+            dims = self.hidden_dims + [self.out_classes],
+            nonlins = [activation]*len(self.hidden_dims) + [nn.Identity()]
+        )
         # ========================
         return mlp
 
@@ -157,7 +135,9 @@ class CNN(nn.Module):
         #  return class scores.
         out: Tensor = None
         # ====== YOUR CODE: ======
-        out = self.mlp(torch.flatten(self.feature_extractor(x)))
+        feats =  self.feature_extractor(x)
+        feats_flat = feats.view(feats.size(0), -1)
+        out = self.mlp(feats_flat)
         # ========================
         return out
 
@@ -216,15 +196,34 @@ class ResidualBlock(nn.Module):
         #  - For simplicity of implementation, assume kernel sizes are odd.
         #  - Don't create layers which you don't use! This will prevent
         #    correct comparison in the test.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # ====== YOUR CODE: ======       
+        channels = [in_channels] + channels
+        layers = []
+        for i, k in enumerate(kernel_sizes[:-1]):
+            layers += [nn.Conv2d(channels[i], channels[i+1], k, padding=(k // 2), bias=True)]
+            if dropout > 0:
+                layers += [nn.Dropout2d(dropout)]
+            if batchnorm:
+                layers += [nn.BatchNorm2d(channels[i+1])]
+            layers += [ACTIVATIONS[activation_type](**activation_params)]
+        layers += [nn.Conv2d(channels[-2], channels[-1], kernel_sizes[-1], padding=(kernel_sizes[-1] // 2))]
+        
+        self.main_path = nn.Sequential(*layers)
+
+        out_channels = channels[-1]
+        if in_channels != out_channels:
+            self.shortcut_path = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+            )
+        else:
+            self.shortcut_path = nn.Sequential()
         # ========================
 
     def forward(self, x: Tensor):
         # TODO: Implement the forward pass. Save the main and residual path to `out`.
         out: Tensor = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = self.main_path(x) + self.shortcut_path(x)
         # ========================
         out = torch.relu(out)
         return out
@@ -264,7 +263,12 @@ class ResidualBottleneckBlock(ResidualBlock):
         #  Initialize the base class in the right way to produce the bottleneck block
         #  architecture.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        super().__init__(
+            in_out_channels,
+            [inner_channels[0]] + list(inner_channels) + [in_out_channels],
+            [1] + list(inner_kernel_sizes) + [1],
+            **kwargs
+        )
         # ========================
 
 
@@ -310,7 +314,43 @@ class ResNet(CNN):
         #  - Use bottleneck blocks if requested and if the number of input and output
         #    channels match for each group of P convolutions.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        block_in_channels = in_channels 
+        conv_channels = []
+
+        for i, c in enumerate(self.channels):
+            conv_channels.append(c)
+            if (i + 1) % self.pool_every == 0 or (i + 1) == len(self.channels):
+                use_bottleneck = self.bottleneck and (block_in_channels == conv_channels[-1])
+                
+                if use_bottleneck:
+                    inner_channels = conv_channels[1:-1]
+                    inner_kernels = [3] * len(inner_channels)
+                    
+                    layers.append(ResidualBottleneckBlock(
+                        in_out_channels=block_in_channels,
+                        inner_channels=inner_channels,
+                        inner_kernel_sizes=inner_kernels,
+                        batchnorm=self.batchnorm,
+                        dropout=self.dropout,
+                        activation_type=self.activation_type,
+                        activation_params=self.activation_params
+                    ))
+                else:
+                    layers.append(ResidualBlock(
+                        in_channels=block_in_channels,
+                        channels=conv_channels,
+                        kernel_sizes=[3] * len(conv_channels),
+                        batchnorm=self.batchnorm,
+                        dropout=self.dropout,
+                        activation_type=self.activation_type,
+                        activation_params=self.activation_params
+                    ))
+                
+                block_in_channels = conv_channels[-1]
+                conv_channels = []
+                
+                if (i + 1) % self.pool_every == 0:
+                     layers.append(POOLINGS[self.pooling_type](**self.pooling_params))
         # ========================
         seq = nn.Sequential(*layers)
         return seq
