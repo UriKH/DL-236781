@@ -80,7 +80,13 @@ class CNN(nn.Module):
         #  Note: If N is not divisible by P, then N mod P additional
         #  CONV->ACTs should exist at the end, without a POOL after them.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        in_channels = self.in_size[0]
+        for i, c in enumerate(self.channels):
+            layers += [nn.Conv2d(**self.conv_params, in_channels = in_channels, out_channels = c), 
+                       nn.ReLU(**self.activation_params) if self.activation_type == 'relu' else nn.LeakyReLU(**self.activation_params)]
+            if (i + 1) % self.pool_every == 0:
+                layers += [nn.MaxPool2d(**self.pooling_params) if self.pooling_type == 'max' else nn.AvgPool2d(**self.pooling_params)]
+            in_channels = c
 
         # ========================
         seq = nn.Sequential(*layers)
@@ -95,7 +101,38 @@ class CNN(nn.Module):
         rng_state = torch.get_rng_state()
         try:
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            def _pair(x):
+                return x if isinstance(x, tuple) else (x, x)
+            
+            C, H, W = self.in_size
+
+            for layer in self.feature_extractor:
+                if isinstance(layer, nn.Conv2d):
+                    kH, kW = _pair(layer.kernel_size)
+                    sH, sW = _pair(layer.stride)
+                    pH, pW = _pair(layer.padding)
+                    dH, dW = _pair(layer.dilation)
+    
+                    H = (H + 2 * pH - dH * (kH - 1) - 1) // sH + 1
+                    W = (W + 2 * pW - dW * (kW - 1) - 1) // sW + 1
+                    C = layer.out_channels
+    
+                elif isinstance(layer, (nn.MaxPool2d, nn.AvgPool2d)):
+                    kH, kW = _pair(layer.kernel_size)
+    
+                    stride = layer.stride if layer.stride is not None else layer.kernel_size
+                    sH, sW = _pair(stride)
+                    pH, pW = _pair(layer.padding)
+
+                    if isinstance(layer, nn.MaxPool2d):
+                        dH, dW = _pair(layer.dilation)
+                    else:
+                        dH, dW = 1, 1
+    
+                    H = (H + 2 * pH - dH * (kH - 1) - 1) // sH + 1
+                    W = (W + 2 * pW - dW * (kW - 1) - 1) // sW + 1
+    
+            return int(C * H * W)
             # ========================
         finally:
             torch.set_rng_state(rng_state)
@@ -109,7 +146,8 @@ class CNN(nn.Module):
         #  - The last Linear layer should have an output dim of out_classes.
         mlp: MLP = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        activation = nn.ReLU(**self.activation_params) if self.activation_type == 'relu' else nn.LeakyReLU(**self.activation_params)
+        mlp = MLP(in_dim = self._n_features(), dims = self.hidden_dims + [self.out_classes], nonlins = [activation]*len(self.hidden_dims) + [nn.Identity()])
         # ========================
         return mlp
 
@@ -119,7 +157,7 @@ class CNN(nn.Module):
         #  return class scores.
         out: Tensor = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = self.mlp(torch.flatten(self.feature_extractor(x)))
         # ========================
         return out
 
