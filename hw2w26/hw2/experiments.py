@@ -128,7 +128,46 @@ def cnn_experiment(
     #   for you automatically.
     fit_res = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    dl_train = DataLoader(ds_train, batch_size=bs_train, shuffle=True)
+    dl_test  = DataLoader(ds_test,  batch_size=bs_test,  shuffle=False)
+    channels = filters_per_layer * layers_per_block
+    # channels = list(itertools.chain.from_iterable(
+    #    [[k] * layers_per_block for k in filters_per_layer]
+    # ))
+    num_classes = 10
+    kw = dict(kw)  
+    kw.setdefault("conv_params", {"kernel_size": 3, "padding": 1})
+    kw.setdefault("pooling_params", {"kernel_size": 2, "stride": 2})
+
+    base_model = model_cls(
+        in_size=ds_train[0][0].shape,
+        out_classes=num_classes,
+        channels=channels,
+        pool_every=pool_every,
+        hidden_dims=hidden_dims,
+        **kw
+    )
+
+    model = ArgMaxClassifier(base_model).to(device)
+
+    loss_fn = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=reg)
+    trainer = ClassifierTrainer(model, loss_fn, optimizer)
+
+    ckpt_path = None
+    if checkpoints is not None:
+        ckpt_path = os.path.join(out_dir, f"{run_name}.pt")
+
+    fit_res = trainer.fit(
+        dl_train,
+        dl_test,
+        num_epochs=epochs,
+        checkpoints=ckpt_path,
+        early_stopping=early_stopping,
+        print_every=0,
+        verbose=False,
+        max_batches=batches,
+    )
     # ========================
 
     save_experiment(run_name, out_dir, cfg, fit_res)
