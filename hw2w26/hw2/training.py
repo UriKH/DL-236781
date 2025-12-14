@@ -101,9 +101,9 @@ class Trainer(abc.ABC):
             #  - Optional: Implement checkpoints. You can use the save_checkpoint
             #    method on this class to save the model to the file specified by
             #    the checkpoints argument.
-            if best_acc is None or test_result.accuracy > best_acc:
+            if best_acc is None or train_result.accuracy >= best_acc:
                 # ====== YOUR CODE: ======
-                best_acc = test_result.accuracy
+                best_acc = train_result.accuracy
                 epochs_without_improvement = 0
 
                 if checkpoints is not None:
