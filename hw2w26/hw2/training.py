@@ -91,6 +91,8 @@ class Trainer(abc.ABC):
             test_loss += test_result.losses
             train_acc.append(train_result.accuracy)
             test_acc.append(test_result.accuracy)
+
+            actual_num_epochs += 1
             # ========================
 
             # TODO:
@@ -102,10 +104,21 @@ class Trainer(abc.ABC):
             if best_acc is None or test_result.accuracy > best_acc:
                 # ====== YOUR CODE: ======
                 best_acc = test_result.accuracy
+                epochs_without_improvement = 0
+
+                if checkpoints is not None:
+                    ckpt_file = checkpoints
+                    root, ext = os.path.splitext(ckpt_file)
+                    if ext == "":
+                        ckpt_file = ckpt_file + ".pt"
+
+                    self.save_checkpoint(ckpt_file)
                 # ========================
             else:
                 # ====== YOUR CODE: ======
-                continue
+                epochs_without_improvement += 1
+                if early_stopping is not None and epochs_without_improvement >= early_stopping:
+                    break
                 # ========================
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)

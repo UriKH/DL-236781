@@ -130,10 +130,10 @@ def cnn_experiment(
     # ====== YOUR CODE: ======
     dl_train = DataLoader(ds_train, batch_size=bs_train, shuffle=True)
     dl_test  = DataLoader(ds_test,  batch_size=bs_test,  shuffle=False)
-    channels = filters_per_layer * layers_per_block
-    # channels = list(itertools.chain.from_iterable(
-    #    [[k] * layers_per_block for k in filters_per_layer]
-    # ))
+    # channels = filters_per_layer * layers_per_block
+    channels = list(itertools.chain.from_iterable(
+       [[k] * layers_per_block for k in filters_per_layer]
+    ))
     num_classes = 10
     kw = dict(kw)  
     kw.setdefault("conv_params", {"kernel_size": 3, "padding": 1})
@@ -152,7 +152,7 @@ def cnn_experiment(
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=reg)
-    trainer = ClassifierTrainer(model, loss_fn, optimizer)
+    trainer = ClassifierTrainer(model, loss_fn, optimizer, device=device)
 
     ckpt_path = None
     if checkpoints is not None:
