@@ -168,7 +168,7 @@ def cnn_experiment(
         num_epochs=epochs,
         checkpoints=ckpt_path,
         early_stopping=early_stopping,
-        print_every=10,
+        print_every=1,
         verbose=True,
         max_batches=batches,
     )
