@@ -9,7 +9,7 @@ math (delimited with $$).
 # Part 1 (Backprop) answers
 
 part1_q1 = r"""
-*Your answer:*
+**Your answer:**
 
 A. X has shape (64, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{X}}$ describes, for each output element, how it changes with respect to each input element:
 
@@ -58,22 +58,13 @@ Therefore, each block has shape $(64,1024)$.
 """
 
 part1_q2 = r"""
-*Your answer:*
-Yes, second order derivatives (Hessian) can be helpful for optimization, but they are usually not used in gradient descent.
+**Your answer:**
+Yes, second order derivatives (Hessian) can be helpful for optimization (but are not commonly used as it is quite expensive to compute unlike the gradient).
 
+When second order information is useful when the condition number is high.
+If the condition number is high this means that in some directions the optimization landscape is much more steep. 
 
-1) High cost: The Hessian is a $d \times d$ matrix. Computing and storing it can be very expensive for large $d$.
-
-2) First order methods scale well: Gradient descent only needs $\nabla f(x)$, which is much cheaper and works well with practical improvements (e.g., momentum).
-
-When second order information is useful:
-
-$f(x) = \frac{1}{2}x^T A x - b^T x, \quad A \succ 0$
-
-Its gradient and Hessian are
-
-$\nabla f(x) = A x - b, \qquad \nabla^2 f(x) = A$
-
+This means we would like to take very big learning rate in order to overcome the low steepness in one direction but a very small learning rate to overcome the high steepness in the other direction. In order to solve this contradiction, we can use Newton's method which utilizes the Hessian matrix in order to "normalize" gradient step in this case.
 """
 
 
