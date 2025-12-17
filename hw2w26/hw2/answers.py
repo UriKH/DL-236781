@@ -44,7 +44,16 @@ E. W has shape (512, 1024) and Y has shape (64, 512), The Jacobian tensor $\pder
 
 $(\pderiv{\mat{Y}}{\mat{W}})_{n,o,p,i} = \pderiv{\mat{Y}_{n,o}}{\mat{W}_{p,i}}$
 
-Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024). If we were to make it into a block matrix, the shape of the block will be 
+Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024). If we were to make it into a block matrix, each block has shape (64, 1024).
+
+
+
+
+If we were to make it into a block matrix, each block contains all derivatives across the remaining indices $(n,i)$:
+
+$\text{block}(o,p) = \left[\pderiv{Y_{n,o}}{W_{p,i}}\right]_{n=1}^{64}{}_{i=1}^{1024}.$
+
+Therefore, each block has shape $(64,1024)$.
 
 """
 
