@@ -136,8 +136,9 @@ def cnn_experiment(
     ))
     num_classes = 10
     kw = dict(kw)  
-    kw.setdefault("conv_params", {"kernel_size": 3, "padding": 0})
+    kw.setdefault("conv_params", {"kernel_size": 3, "padding": 1})
     kw.setdefault("pooling_params", {"kernel_size": 2, "stride": 2})
+    kw.setdefault('activation_type', 'lrelu')
 
     base_model = model_cls(
         in_size=ds_train[0][0].shape,
@@ -150,8 +151,8 @@ def cnn_experiment(
 
     model = ArgMaxClassifier(base_model).to(device)
 
-    with torch.no_grad():
-        model.apply(lambda m: torch.nn.init.xavier_uniform_(m.weight) if hasattr(m, "weight") else None)
+    # with torch.no_grad():
+    #     model.apply(lambda m: torch.nn.init.xavier_uniform_(m.weight) if hasattr(m, "weight") else None)
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=reg)
@@ -167,7 +168,7 @@ def cnn_experiment(
         num_epochs=epochs,
         checkpoints=ckpt_path,
         early_stopping=early_stopping,
-        print_every=1,
+        print_every=10,
         verbose=True,
         max_batches=batches,
     )
