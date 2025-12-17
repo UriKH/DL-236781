@@ -11,7 +11,11 @@ math (delimited with $$).
 part1_q1 = r"""
 **Your answer:**
 
-A. X has shape (64, 1024) and Y has shape (64, 512), therefore the Jacobian tensor $\pderiv{\mat{Y}}{\mat{X}}$ will have shape (64, 512, 64, 1024)
+A. X has shape (64, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{X}}$ describes, for each output element, how it changes with respect to each input element:
+
+$(\pderiv{\mat{Y}}{\mat{X}})_{n,o,m,i} = \pderiv{\mat{Y}_{n,o}}{\mat{X}_{m,i}}$
+
+Therefore, the Jacobian tensor will have shape (64, 512, 64, 1024).
 
 B. If we view the Jacobian $\pderiv{\mat{Y}}{\mat{X}}$ as a 2D block matrix, we will get $N \times N$ blocks of (out_features × in_features) such that the block (i,j) is $\pderiv{\mat{Y}_i}{\mat{X}_j}$. For a linear layer $Y=XW^T$, each output $\mat{Y}_k$ depends only on its own input sample $\mat{X}_k$ we get:
 \begin{cases}
@@ -20,14 +24,27 @@ B. If we view the Jacobian $\pderiv{\mat{Y}}{\mat{X}}$ as a 2D block matrix, we 
 \end{cases}
 The structure is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero.
 
-C. 
+C. Yes, apart from VJP we can use the Jacobian’s block structure. As we say previously, $\pderiv{\mat{Y}_i}{\mat{X}_j}$ is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero. Therefore, there is no need to materialize the full Jacobian of shape, we can just represent it by storing only $W$.
 
 D. Given the gradient of the output w.r.t. some downstream scalar loss $L$, $\delta\mat{Y} := \pderiv{L}{\mat{Y}}$ we can use the chain rule to calculate the downstream gradient w.r.t. the input ($\delta\mat{X}$) without materializing the Jacobian:
 
-$\delta\mat{X} = \pderiv{L}{\mat{X}} = \pderiv{L}{\mat{Y}} \pderiv{Y}{\mat{X}}$
+$\delta \mat{X}_{n,i} = \pderiv{L}{\mat{X}_{n,i}} = \sum_{o=1}^{O} \pderiv{L}{\mat{Y}_{n,o}} \, \pderiv{\mat{Y}_{n,o}}{\mat{X}_{n,i}}$
 
+$\mat{Y}_{n,o} = \sum_{j=1}^J \mat{X}_{n,j}\mat{W}_{j,o}^T$
 
-E.
+Therefore, 
+
+$\delta \mat{X}_{n,i} = \sum_{o=1}^{O} \delta \mat{Y}_{n,o}\mat{W}_{j,o}^T = \sum_{o=1}^{O} \delta \mat{Y}_{n,o}\mat{W}_{o,j}$
+
+In matrix form for the whole batch:
+
+$\delta \mat{X} = \mat{Y}\mat{W}$
+
+E. W has shape (512, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{W}}$ describes, for each output element, how it changes with respect to each weight element:
+
+$(\pderiv{\mat{Y}}{\mat{W}})_{n,o,p,i} = \pderiv{\mat{Y}_{n,o}}{\mat{W}_{p,i}}$
+
+Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024). If we were to make it into a block matrix, the shape of the block will be 
 
 """
 
