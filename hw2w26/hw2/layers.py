@@ -499,7 +499,7 @@ class MLP(Layer):
         
         for i in range(len(feats) - 1):
             layers += [
-                Linear(feats[i], feats[i+1]),
+                Linear(feats[i], feats[i+1], **kw),
                 (ReLU() if activation == 'relu' else Sigmoid())
             ]
             if dropout > 0:
