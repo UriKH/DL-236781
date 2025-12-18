@@ -63,7 +63,7 @@ class MLP(nn.Module):
             layers += [ nn.Linear(feats[i], feats[i + 1]) ]
             nonlin = nonlins[i]
             if isinstance(nonlin, str):
-                layers += [ ACTIVATIONS[nonlin]() ]
+                layers += [ ACTIVATIONS[nonlin](**ACTIVATION_DEFAULT_KWARGS[nonlin]) ]
             else:
                 layers += [ nonlin ]
                 

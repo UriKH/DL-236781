@@ -86,9 +86,10 @@ class Trainer(abc.ABC):
             # import time
             # time.sleep(1)
             train_result = self.train_epoch(dl_train, **kw)
-            test_result = self.test_epoch(dl_test, **kw)
-            train_loss += train_result.losses
-            test_loss += test_result.losses
+            test_result  = self.test_epoch(dl_test,  **kw)
+            
+            train_loss.append(sum(train_result.losses) / len(train_result.losses))
+            test_loss.append(sum(test_result.losses) / len(test_result.losses))
             train_acc.append(train_result.accuracy)
             test_acc.append(test_result.accuracy)
 
@@ -283,8 +284,8 @@ class ClassifierTrainer(Trainer):
         loss = self.loss_fn(scores, y)
         loss.backward() 
         self.optimizer.step() 
-    
-        preds = torch.argmax(scores, dim=1)
+
+        preds = self.model.classify_scores(scores)
         num_correct = int((preds == y).sum().item())
         batch_loss = float(loss.item())
         # ========================
@@ -308,7 +309,8 @@ class ClassifierTrainer(Trainer):
             # ====== YOUR CODE: ======
             scores = self.model(X)
             loss = self.loss_fn(scores, y)
-            preds = torch.argmax(scores, dim=1)
+
+            preds = self.model.classify_scores(scores)
             num_correct = int((preds == y).sum().item())
             batch_loss = float(loss.item())
 

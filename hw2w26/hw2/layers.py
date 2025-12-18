@@ -339,6 +339,7 @@ class CrossEntropyLoss(Layer):
         dx = probs.clone()
         dx[torch.arange(N), y] -= 1.0
         dx /= N
+        dx *= dout 
         # ========================
 
         return dx
@@ -502,9 +503,9 @@ class MLP(Layer):
                 Linear(feats[i], feats[i+1], **kw),
                 (ReLU() if activation == 'relu' else Sigmoid())
             ]
-            if dropout > 0:
+            if dropout > 0 and activation == 'relu':
                 layers.append(Dropout(p=dropout))
-        if dropout > 0:
+        if dropout > 0 and activation == 'relu':
             layers = layers[:-2]
         else:
             layers = layers[:-1]

@@ -188,9 +188,7 @@ def plot_decision_boundary_2d(
         [x1_grid.reshape(-1), x2_grid.reshape(-1)], dim=1
     )
     with torch.no_grad():
-        y_pred = classifier(grid_points)
-        if y_pred.ndim > 1:
-            y_pred = torch.argmax(y_pred, dim=1)
+        y_pred =classifier.classify(grid_points)
 
     y_hat = y_pred.reshape(x1_grid.shape)
     # ========================
@@ -226,17 +224,29 @@ def select_roc_thresh(
     fpr, tpr, thresh = None, None, None
     optimal_theresh_idx, optimal_thresh = None, None
     # ====== YOUR CODE: ======
-    import math
-    classified = classifier.classify(x)
-    fpr, tpr, thresh = roc_curve(y, classified)
+    # import math
+    # classified = classifier.classify(x)
+    # fpr, tpr, thresh = roc_curve(y, classified)
 
-    optimal_thresh_idx = None
-    best_r = math.inf
-    for i, (fp, tp) in enumerate(zip(fpr, tpr)):
-        r = math.sqrt((1-tp) ** 2 + fp ** 2)
-        if r < best_r:
-            best_r = r
-            optimal_thresh_idx = i
+    # optimal_thresh_idx = None
+    # best_r = math.inf
+    # for i, (fp, tp) in enumerate(zip(fpr, tpr)):
+    #     r = math.sqrt((1-tp) ** 2 + fp ** 2)
+    #     if r < best_r:
+    #         best_r = r
+    #         optimal_thresh_idx = i
+    # optimal_thresh = thresh[optimal_thresh_idx]
+    # ========================
+    # ====== YOUR CODE: ======
+    y_scores = classifier(x)
+    y_scores = y_scores.softmax(dim=1)[:, 1]
+       
+    y_true = y.detach().cpu().numpy()
+    y_pred = y_scores.detach().cpu().numpy()
+    fpr, tpr, thresh = roc_curve(y_true, y_pred)
+
+    dist_squared = (1 - tpr) ** 2 + fpr ** 2 
+    optimal_thresh_idx = dist_squared.argmin()
     optimal_thresh = thresh[optimal_thresh_idx]
     # ========================
 

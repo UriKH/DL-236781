@@ -11,7 +11,7 @@ from torchvision.datasets import CIFAR10
 
 from cs236781.train_results import FitResult
 
-from .cnn import CNN, ResNet
+from .cnn import CNN, ResNet, YourCNN
 from .mlp import MLP
 from .training import ClassifierTrainer
 from .classifier import ArgMaxClassifier, BinaryClassifier, select_roc_thresh
@@ -22,6 +22,7 @@ MODEL_TYPES = {
     ###
     "cnn": CNN,
     "resnet": ResNet,
+    "yourcnn": YourCNN
 }
 
 
@@ -45,28 +46,25 @@ def mlp_experiment(
     #  Note: use print_every=0, verbose=False, plot=False where relevant to prevent
     #  output from this function.
     # ====== YOUR CODE: ======
-    mlp = MLP(2, [width] * depth, ['relu'] * (depth - 1) + ['sigmoid'])
-    
-    model = BinaryClassifier(mlp, 1)
-    loss_fn = torch.nn.CrossEntropyLoss()
+    x0, y0 = dl_train.dataset[0]
+    mlp = MLP(in_dim = x0.shape[0], dims = [width] * depth + [2], nonlins = ['tanh'] * depth + ['none'])
+    model = BinaryClassifier(mlp)
 
-    # 0.05 0.005 0.1 - 65~
-    lr = 0.05
-    weight_decay = 0.005
-    momentum = 0.1
-    
-    ompimizer = torch.optim.SGD(params=model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
-    trainer = ClassifierTrainer(model, loss_fn, ompimizer)
-    fit_result= trainer.fit(dl_train, dl_valid, num_epochs=n_epochs, print_every=0, verbose=False);
-    test_acc = fit_result.test_acc[-1]
-    thresh = select_roc_thresh(model, *dl_valid.dataset.tensors)
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1e-3, weight_decay = 1e-4) 
+    trainer = ClassifierTrainer(model, torch.nn.CrossEntropyLoss(), optimizer)
+    trainer.fit(dl_train, dl_valid, num_epochs=n_epochs, print_every=0)
 
     with torch.no_grad():
-        x_valid, y_valid = dl_valid.dataset.tensors
-        y_scores = model.classify(x_valid)
-        y_pred = (y_scores >= thresh).long().squeeze()
-        valid_acc = (y_pred == y_valid).float().mean().item()
-        valid_acc = 0
+        x_valid, y_valid = dl_valid.dataset.tensors 
+        x_test, y_test = dl_test.dataset.tensors
+        
+        thresh = select_roc_thresh(model, x_valid, y_valid, plot=False)   
+        model.threshold = thresh   
+        
+        valid_preds = model.classify(x_valid)
+        valid_acc = (valid_preds == y_valid).float().mean().item() * 100
+        test_preds = model.classify(x_test)
+        test_acc = (test_preds == y_test).float().mean().item() * 100
     # ========================
     return model, thresh, valid_acc, test_acc
 
