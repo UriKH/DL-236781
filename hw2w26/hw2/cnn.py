@@ -141,6 +141,138 @@ class CNN(nn.Module):
         # ========================
         return out
 
+class BasicConv2d(nn.Module):
+    """
+    Basic Conolution 2D module 
+    """
+    def __init__(self, in_channels, out_channels, activation='relu', **kwargs):
+        """
+        Constractor for the basic convolution layer
+        :param in_channels: the number of input channels to the layer
+        :param out_channels: the number of output channels of the layer
+        :param activation: the activation layer after the convolution
+        """
+        super(BasicConv2d, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, **kwargs)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.activation = activation
+        if activation == 'relu':
+            self.activation = nn.ReLU(inplace=True)
+        else:
+            self.activation = nn.Linear()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.activation(x)
+        return x
+            
+class InceptionResNetBlock(nn.Module):
+    def __init__(self, in_channels, branch_a, branch_b=None, branch_c=None, out_concat=128, scale=True):
+        super().__init__()
+        
+        self.branch_a = nn.Sequential(*self.create_layers(in_channels, branch_a))
+        self.branch_b = nn.Sequential(*self.create_layers(in_channels, branch_b)) if branch_b else None
+        self.branch_c = nn.Sequential(*self.create_layers(in_channels, branch_c)) if branch_c else None
+
+        # input_concat = branch_a[-1][1] + branch_b[-1][1] if branch_b else 0 + branch_c[-1][1] if branch_c else 0
+        input_concat = branch_a[-1][1]
+        if branch_b:
+            input_concat += branch_b[-1][1]
+        if branch_c:
+            input_concat += branch_c[-1][1]
+
+        self.concat_branch1x1 = BasicConv2d(input_concat, out_concat, kernel_size=1, padding='same', activation='relu')
+        self.scale = scale
+        # self.scale_res = Lambda(lambda x: x * 0.1)
+        self.bn = nn.BatchNorm2d(in_channels)
+    
+    def create_layers(self, in_channels, branch_tuples):
+        last = in_channels
+        layers = []
+        for i, (kernel_size, channels) in enumerate(branch_tuples):
+            layers.append(BasicConv2d(last, channels, kernel_size=kernel_size, padding='same'))
+            last = channels
+        return layers
+
+    def forward(self, x):
+        branch_a = self.branch_a(x)
+        branch_b = self.branch_b(x)
+        branch_c = self.branch_c(x)
+
+        outputs = [branch_a, branch_b, branch_c]
+        mixed = torch.cat(outputs, 1)   # concatenation of the a, b, c branches
+
+        mixed = self.concat_branch1x1(mixed)    # convolution on the concatenated branch
+        # if self.scale:
+        #     mixed = self.scale_res(mixed)   # scale down the mixed branches impact
+        x = x.add(mixed)
+        
+        x = nn.ReLU()(self.bn(x))
+        return x
+        
+class YourCNN(CNN):    
+    def __init__(
+        self,
+        in_size,
+        out_classes: int,
+        channels: Sequence[int],
+        pool_every: int,
+        hidden_dims: Sequence[int],
+        conv_params: dict = {},
+        activation_type: str = "relu",
+        activation_params: dict = {},
+        pooling_type: str = "max",
+        pooling_params: dict = {},
+    ):
+        self.batchnorm = True
+        self.dropout = 0.4
+        super().__init__(
+            in_size, out_classes, channels, pool_every, hidden_dims, conv_params,
+            activation_type, activation_params, pooling_type, pooling_params
+        )
+        
+        dims = [4096, 2048, 1024]
+        self.mlp = MLP(
+            in_dim = self._n_features(),
+            dims = dims + [self.out_classes],
+            nonlins = ['relu'] * len(dims) + [nn.Identity()]
+        )
+
+    def _make_feature_extractor(self):
+        in_channels, _, _ = tuple(self.in_size)
+
+        layers = []
+        block_in_channels = in_channels
+        conv_channels = []
+        
+        for i, c in enumerate(self.channels):
+            conv_channels.append(c)
+        
+            end_of_block = ((i + 1) % self.pool_every == 0) or ((i + 1) == len(self.channels))
+            if end_of_block:
+                layers.append(
+                    ResidualBlock(
+                        in_channels=block_in_channels,
+                        channels=conv_channels,
+                        kernel_sizes=[3] * len(conv_channels),
+                        batchnorm=self.batchnorm,
+                        dropout=self.dropout,
+                        activation_type=self.activation_type,
+                        activation_params=self.activation_params,
+                    )
+                )
+        
+                block_in_channels = conv_channels[-1]
+                conv_channels = []
+        
+                if (i + 1) % self.pool_every == 0:
+                    layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
+        # ========================
+        layers += [InceptionResNetBlock(block_in_channels, [(1, 64), (3, 64), (3, 64)], [(1, 32)], [(3,32), (3,32)], 32)]
+        seq = nn.Sequential(*layers)
+        return seq
+
 
 class ResidualBlock(nn.Module):
     """
