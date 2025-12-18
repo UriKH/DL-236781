@@ -127,15 +127,17 @@ def part2_dropout_hp():
 
 part2_q1 = r"""
 **Your answer:**
+1. Yes, the graphs match the theoretical expectations.
 
+- Without Dropout (blue curve): In the train_acc graph, the accuracy reaches fast to nearly 80% However, in the test_acc graph, the performance is at a much lower level (~26%). In addition, the test_loss graph shows the loss decreasing initially but then starting to rise again. This configurations demonstrate overfitting - the model is failing to generalize to new data.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+- With Dropout (orange and green curves): The dropout successfully acts as regularization as we can see that the gap between training and testing performance is significantly smaller.
 
+2. Comparing dropout=0.4 to dropout=0.8:
+
+- Low Dropout (0.4): It applies enough regularization to prevent the overfitting, but it preserves enough information to allow the model to learn effectively. It achieves the highest test accuracy and appears to be optimal.
+
+- High Dropout (0.8): This setting is too aggressive and leading to underfitting. In the train_acc graph, the green line struggles to exceed 35% accuracy. Because the model drops 80% of its connections during each pass, it lacks the capacity to learn complex features from the training data. 
 """
 
 part2_q2 = r"""
@@ -165,15 +167,15 @@ part2_q3 = r"""
 **Your answer:**
 1. Similarities of gradient descent (GD) and stochastic gradient descent (SGD):
 
-(1) Both aim to minimize the same loss function
+- Both aim to minimize the same loss function
 
-(2) Same update rule $\theta \leftarrow \theta - \eta \cdot gradient$
+- Same update rule $\theta \leftarrow \theta - \eta \cdot gradient$
 
 Differences of gradient descent (GD) and stochastic gradient descent (SGD):
 
-(1) How they compute the gradient - GD uses all data while SGD pick one sample from a uniform distrubution on tha dataset.
+- How they compute the gradient - GD uses all data while SGD pick one sample from a uniform distrubution on tha dataset.
 
-(2) Cost - GD goes through all N examples to compute one gradient while SGD computes the gradient w.r.t only one sample, so each step is much faster.
+- Cost - GD goes through all N examples to compute one gradient while SGD computes the gradient w.r.t only one sample, so each step is much faster.
 
 (3) Noise - GD get deterministic path and the loss usually decreases smoothly while in SGD each gradient is noisy (since it is computed on different samples each epoch) and the randomness in the sampling gives different paths.
 
