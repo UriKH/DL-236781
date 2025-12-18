@@ -96,11 +96,11 @@ def part2_optim_hp():
     # TODO: Tweak the hyperparameters to get the best results you can.
     # You may want to use different learning rates for each optimizer.
     # ====== YOUR CODE: ======
-    wstd = 0.1
-    lr_vanilla = 0.015
-    lr_momentum = 0.0015 # 0.0025 # 0.0015
-    lr_rmsprop = 0.0001 #0.000125 #0.0001
-    reg = 0.025
+    wstd = 0.12
+    lr_vanilla = 0.0155
+    lr_momentum = 0.0019 # 0.0025 # 0.0015
+    lr_rmsprop = 0.0001255 #0.000125 #0.0001
+    reg = 0.024
     # ========================
     return dict(
         wstd=wstd,
@@ -201,7 +201,7 @@ def part3_arch_hp():
     n_layers = 4
     hidden_dims = 100
     activation = 'relu'
-    out_activation = 'sigmoid'
+    out_activation = 'none'
     # ========================
     return dict(
         n_layers=n_layers,
@@ -224,9 +224,9 @@ def part3_optim_hp():
     #    Loss classes in torch.nn or one of the loss functions from torch.nn.functional.
     # ====== YOUR CODE: ======
     loss_fn = torch.nn.CrossEntropyLoss()
-    lr = 0.1
-    weight_decay = 0.003
-    momentum = 0.003
+    lr = 0.05
+    weight_decay = 0.01
+    momentum = 0.001
     # ========================
     return dict(lr=lr, weight_decay=weight_decay, momentum=momentum, loss_fn=loss_fn)
 

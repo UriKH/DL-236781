@@ -206,17 +206,15 @@ class ResidualBlock(nn.Module):
             if batchnorm:
                 layers += [nn.BatchNorm2d(channels[i+1])]
             layers += [ACTIVATIONS[activation_type](**activation_params)]
-        layers += [nn.Conv2d(channels[-2], channels[-1], kernel_sizes[-1], padding=(kernel_sizes[-1] // 2))]
+        layers += [nn.Conv2d(channels[-2], channels[-1], kernel_sizes[-1], padding=(kernel_sizes[-1] // 2), bias=True)]
         
         self.main_path = nn.Sequential(*layers)
 
         out_channels = channels[-1]
         if in_channels != out_channels:
-            self.shortcut_path = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
-            )
+            self.shortcut_path = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
         else:
-            self.shortcut_path = nn.Sequential()
+            self.shortcut_path = nn.Identity()
         # ========================
 
     def forward(self, x: Tensor):
@@ -314,43 +312,54 @@ class ResNet(CNN):
         #  - Use bottleneck blocks if requested and if the number of input and output
         #    channels match for each group of P convolutions.
         # ====== YOUR CODE: ======
-        block_in_channels = in_channels 
+        block_in_channels = in_channels
         conv_channels = []
-
+        
         for i, c in enumerate(self.channels):
             conv_channels.append(c)
-            if (i + 1) % self.pool_every == 0 or (i + 1) == len(self.channels):
-                use_bottleneck = self.bottleneck and (block_in_channels == conv_channels[-1])
-                
+        
+            end_of_block = ((i + 1) % self.pool_every == 0) or ((i + 1) == len(self.channels))
+            if end_of_block:
+                use_bottleneck = (
+                    self.bottleneck
+                    and (block_in_channels == conv_channels[-1])
+                    and (len(conv_channels) >= 3)
+                    and ((i + 1) % self.pool_every == 0)
+                )
+        
                 if use_bottleneck:
-                    inner_channels = conv_channels[1:-1]
+                    inner_channels = conv_channels[1:-1] 
                     inner_kernels = [3] * len(inner_channels)
-                    
-                    layers.append(ResidualBottleneckBlock(
-                        in_out_channels=block_in_channels,
-                        inner_channels=inner_channels,
-                        inner_kernel_sizes=inner_kernels,
-                        batchnorm=self.batchnorm,
-                        dropout=self.dropout,
-                        activation_type=self.activation_type,
-                        activation_params=self.activation_params
-                    ))
+        
+                    layers.append(
+                        ResidualBottleneckBlock(
+                            in_out_channels=block_in_channels,
+                            inner_channels=inner_channels,
+                            inner_kernel_sizes=inner_kernels,
+                            batchnorm=self.batchnorm,
+                            dropout=self.dropout,
+                            activation_type=self.activation_type,
+                            activation_params=self.activation_params,
+                        )
+                    )
                 else:
-                    layers.append(ResidualBlock(
-                        in_channels=block_in_channels,
-                        channels=conv_channels,
-                        kernel_sizes=[3] * len(conv_channels),
-                        batchnorm=self.batchnorm,
-                        dropout=self.dropout,
-                        activation_type=self.activation_type,
-                        activation_params=self.activation_params
-                    ))
-                
+                    layers.append(
+                        ResidualBlock(
+                            in_channels=block_in_channels,
+                            channels=conv_channels,
+                            kernel_sizes=[3] * len(conv_channels),
+                            batchnorm=self.batchnorm,
+                            dropout=self.dropout,
+                            activation_type=self.activation_type,
+                            activation_params=self.activation_params,
+                        )
+                    )
+        
                 block_in_channels = conv_channels[-1]
                 conv_channels = []
-                
+        
                 if (i + 1) % self.pool_every == 0:
-                     layers.append(POOLINGS[self.pooling_type](**self.pooling_params))
+                    layers.append(POOLINGS[self.pooling_type](**self.pooling_params))
         # ========================
         seq = nn.Sequential(*layers)
         return seq
