@@ -13,7 +13,7 @@ part1_q1 = r"""
 
 A. X has shape (64, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{X}}$ describes, for each output element, how it changes with respect to each input element:
 
-$(\pderiv{\mat{Y}}{\mat{X}})_{n,o,m,i} = \pderiv{\mat{Y}_{n,o}}{\mat{X}_{m,i}}$
+$(\pderiv{\mat{Y}}{\mat{X}}){n,o,m,i} = \pderiv{\mat{Y}{n,o}}{\mat{X}_{m,i}}$
 
 Therefore, the Jacobian tensor will have shape (64, 512, 64, 1024).
 
@@ -28,13 +28,13 @@ C. Yes, apart from VJP we can use the Jacobian’s block structure. As we say pr
 
 D. Given the gradient of the output w.r.t. some downstream scalar loss $L$, $\delta\mat{Y} := \pderiv{L}{\mat{Y}}$ we can use the chain rule to calculate the downstream gradient w.r.t. the input ($\delta\mat{X}$) without materializing the Jacobian:
 
-$\delta \mat{X}_{n,i} = \pderiv{L}{\mat{X}_{n,i}} = \sum_{o=1}^{O} \pderiv{L}{\mat{Y}_{n,o}} \, \pderiv{\mat{Y}_{n,o}}{\mat{X}_{n,i}}$
+$\delta \mat{X}{n,i} = \pderiv{L}{\mat{X}{n,i}} = \sum_{o=1}^{O} \pderiv{L}{\mat{Y}{n,o}} \, \pderiv{\mat{Y}{n,o}}{\mat{X}_{n,i}}$
 
-$\mat{Y}_{n,o} = \sum_{j=1}^J \mat{X}_{n,j}\mat{W}_{j,o}^T$
+$\mat{Y}{n,o} = \sum{j=1}^J \mat{X}{n,j}\mat{W}{j,o}^T$
 
 Therefore, 
 
-$\delta \mat{X}_{n,i} = \sum_{o=1}^{O} \delta \mat{Y}_{n,o}\mat{W}_{j,o}^T = \sum_{o=1}^{O} \delta \mat{Y}_{n,o}\mat{W}_{o,j}$
+$\delta \mat{X}{n,i} = \sum{o=1}^{O} \delta \mat{Y}{n,o}\mat{W}{j,o}^T = \sum_{o=1}^{O} \delta \mat{Y}{n,o}\mat{W}{o,j}$
 
 In matrix form for the whole batch:
 
@@ -42,7 +42,7 @@ $\delta \mat{X} = \mat{Y}\mat{W}$
 
 E. W has shape (512, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{W}}$ describes, for each output element, how it changes with respect to each weight element:
 
-$(\pderiv{\mat{Y}}{\mat{W}})_{n,o,p,i} = \pderiv{\mat{Y}_{n,o}}{\mat{W}_{p,i}}$
+$(\pderiv{\mat{Y}}{\mat{W}}){n,o,p,i} = \pderiv{\mat{Y}{n,o}}{\mat{W}_{p,i}}$
 
 Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024). If we were to make it into a block matrix, each block has shape (64, 1024).
 
@@ -51,7 +51,7 @@ Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024). If we were 
 
 If we were to make it into a block matrix, each block contains all derivatives across the remaining indices $(n,i)$:
 
-$\text{block}(o,p) = \left[\pderiv{Y_{n,o}}{W_{p,i}}\right]_{n=1}^{64}{}_{i=1}^{1024}.$
+$\text{block}(o,p) = \left[\pderiv{Y_{n,o}}{W_{p,i}}\right]{n=1}^{64}{}{i=1}^{1024}.$
 
 Therefore, each block has shape $(64,1024)$.
 
@@ -59,16 +59,14 @@ Therefore, each block has shape $(64,1024)$.
 
 part1_q2 = r"""
 **Your answer:**
+Yes, second order derivatives (Hessian) can be helpful for optimization (but are not commonly used as it is quite expensive to compute unlike the gradient).
 
+When second order information is useful when the condition number is high.
+If the condition number is high this means that in some directions the optimization landscape is much more steep. 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+This means we would like to take very big learning rate in order to overcome the low steepness in one direction but a very small learning rate to overcome the high steepness in the other direction. In order to solve this contradiction, we can use Newton's method which utilizes the Hessian matrix in order to "normalize" gradient step in this case.
 """
+
 
 
 # ==============
@@ -79,7 +77,7 @@ def part2_overfit_hp():
     wstd, lr, reg = 0, 0, 0
     # TODO: Tweak the hyperparameters until you overfit the small dataset.
     # ====== YOUR CODE: ======
-    wstd = 0.001
+    wstd = 0.1
     lr = 0.01
     reg = 0
     # ========================
@@ -98,11 +96,11 @@ def part2_optim_hp():
     # TODO: Tweak the hyperparameters to get the best results you can.
     # You may want to use different learning rates for each optimizer.
     # ====== YOUR CODE: ======
-    wstd = 0.0035
-    lr_vanilla = 0.04
-    lr_momentum = 0.005
-    lr_rmsprop = 0.0002
-    reg = 0.002
+    wstd = 0.1
+    lr_vanilla = 0.015
+    lr_momentum = 0.0015 # 0.0025 # 0.0015
+    lr_rmsprop = 0.0001 #0.000125 #0.0001
+    reg = 0.025
     # ========================
     return dict(
         wstd=wstd,
@@ -121,8 +119,8 @@ def part2_dropout_hp():
     # TODO: Tweak the hyperparameters to get the model to overfit without
     # dropout.
     # ====== YOUR CODE: ======
-    wstd = 0.005
-    lr = 0.0005
+    wstd = 0.05
+    lr = 0.001
     # ========================
     return dict(wstd=wstd, lr=lr)
 
