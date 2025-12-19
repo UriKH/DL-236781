@@ -159,7 +159,7 @@ class BasicConv2d(nn.Module):
         if activation == 'relu':
             self.activation = nn.ReLU(inplace=True)
         elif activation == 'lrelu':
-            self.activation = nn.LReLU(inplace=True)
+            self.activation = nn.LeakyReLU(inplace=True)
         else:
             self.activation = nn.Linear()
 
@@ -173,16 +173,17 @@ class InceptionResNetBlock(nn.Module):
     def __init__(self, in_channels, branches, out_concat=128, scale=True, pool_branch=None, activation='relu'):
         super().__init__()
         
-        self.seq_brch = []
+        self.seq_branch = []
         for branch in branches:
-            self.seq_brch.append(nn.Sequential(*self.create_layers(in_channels, branch, activation)))
+            self.seq_branch.append(nn.Sequential(*self.create_layers(in_channels, branch, activation)))
         
         input_concat = 0
         for b in branches:
             input_concat += b[-1][1]
 
         if pool_branch is not None:
-            self.seq_brch.append(POOLINGS[pool_branch](kenrel_size=2, padding='same', stride=2))
+            self.seq_branch.append(POOLINGS[pool_branch](kernel_size=3, padding=1, stride=1))
+            input_concat += in_channels
 
         self.concat_branch1x1 = BasicConv2d(input_concat, out_concat, kernel_size=1, padding='same', activation=activation)
         self.scale = scale
@@ -198,15 +199,15 @@ class InceptionResNetBlock(nn.Module):
 
     def forward(self, x):
         outputs = []
-        for i, branch in enumerate(self.seq_branches):
-            outputs.append(self.seq_branches[i](x))
+        for i, branch in enumerate(self.seq_branch):
+            outputs.append(self.seq_branch[i](x))
         
         mixed = torch.cat(outputs, 1)   # concatenation of the a, b, c branches
 
         mixed = self.concat_branch1x1(mixed)    # convolution on the concatenated branch
         x = x.add(mixed)
         
-        x = nn.LReLU()(self.bn(x))
+        x = nn.LeakyReLU()(self.bn(x))
         return x
         
 class YourCNN(CNN):    
@@ -246,9 +247,11 @@ class YourCNN(CNN):
                 layers.append(
                     InceptionResNetBlock(
                         block_in_channels, 
-                        [(1, c), (3, c), (3, c)],
-                        [(1, c), (3, c)],
-                        [(1, c)],
+                        [
+                            [(1, c), (3, c), (3, c)],
+                            [(1, c), (3, c)],
+                            [(1, c)]
+                        ],
                         block_in_channels,
                         pool_branch='avg',
                         activation='lrelu'
@@ -256,7 +259,7 @@ class YourCNN(CNN):
                 )
                 layers.append(nn.Dropout2d(self.dropout))
                 layers.append(
-                    BaisicConv2d(
+                    BasicConv2d(
                         block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
                     )
                 )
