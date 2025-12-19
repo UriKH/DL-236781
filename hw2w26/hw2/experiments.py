@@ -129,13 +129,9 @@ def cnn_experiment(
     dl_train = DataLoader(ds_train, batch_size=bs_train, shuffle=True)
     dl_test  = DataLoader(ds_test,  batch_size=bs_test,  shuffle=False)
     # channels = filters_per_layer * layers_per_block
-    channels = list(itertools.chain.from_iterable(
-       [[k] * layers_per_block for k in filters_per_layer]
-    ))
-    print(channels)
-
+    channels = list(itertools.chain.from_iterable([[k] * layers_per_block for k in filters_per_layer]))
     num_classes = 10
-    kw = dict(kw)  
+    kw = dict(kw)
     kw["conv_params"] = {"kernel_size": 5, "padding": 2}
     kw["pooling_params"] = {"kernel_size": 2, "stride": 2}
     kw['activation_type'] = 'lrelu'
@@ -155,8 +151,8 @@ def cnn_experiment(
 
     model = ArgMaxClassifier(base_model).to(device)
 
-    #with torch.no_grad():
-    #    model.apply(lambda m: torch.nn.init.kaiming_uniform_(m.weight) if hasattr(m, "weight") else None)
+    with torch.no_grad():
+        model.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.01) if hasattr(m, "weight") else None)
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=reg)

@@ -233,12 +233,12 @@ class YourCNN(CNN):
             activation_type, activation_params, pooling_type, pooling_params
         )
         
-        dims = [4096, 2048, 1024]
-        self.mlp = MLP(
-            in_dim = self._n_features(),
-            dims = dims + [self.out_classes],
-            nonlins = ['relu'] * len(dims) + [nn.Identity()]
-        )
+        #dims = [4096, 2048, 1024]
+        #self.mlp = MLP(
+        #    in_dim = self._n_features(),
+        #    dims = dims + [self.out_classes],
+        #    nonlins = ['relu'] * len(dims) + [nn.Identity()]
+        #)
 
     def _make_feature_extractor(self):
         in_channels, _, _ = tuple(self.in_size)
