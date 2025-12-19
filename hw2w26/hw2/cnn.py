@@ -227,18 +227,11 @@ class YourCNN(CNN):
         **kw
     ):
         self.batchnorm = True
-        self.dropout = 0.4
+        self.dropout = 0.2
         super().__init__(
             in_size, out_classes, channels, pool_every, hidden_dims, conv_params,
             activation_type, activation_params, pooling_type, pooling_params
         )
-        
-        #dims = [4096, 2048, 1024]
-        #self.mlp = MLP(
-        #    in_dim = self._n_features(),
-        #    dims = dims + [self.out_classes],
-        #    nonlins = ['relu'] * len(dims) + [nn.Identity()]
-        #)
 
     def _make_feature_extractor(self):
         in_channels, _, _ = tuple(self.in_size)
@@ -253,16 +246,31 @@ class YourCNN(CNN):
             end_of_block = ((i + 1) % self.pool_every == 0) or ((i + 1) == len(self.channels))
             if end_of_block:
                 layers.append(
-                    ResidualBlock(
-                        in_channels=block_in_channels,
-                        channels=conv_channels,
-                        kernel_sizes=[3] * len(conv_channels),
-                        batchnorm=self.batchnorm,
-                        dropout=self.dropout,
-                        activation_type=self.activation_type,
-                        activation_params=self.activation_params,
+                    InceptionResNetBlock(
+                        block_in_channels, 
+                        [(1, conv_channels), (3, conv_channels), (3, conv_channels)],
+                        [(3, conv_channels), (3, conv_channels)],
+                        [(1, conv_channels)],
+                        block_in_channels
                     )
                 )
+                layers.append(nn.Dropout(self.dropout))
+                layers.append(
+                    BasicConv2d(
+                        block_in_channels, conv_channels, 'relu', padding='same'
+                    )
+                )
+                layers.append(nn.Dropout(self.dropout))
+                # ResidualBlock(
+                #         in_channels=block_in_channels,
+                #         channels=conv_channels,
+                #         kernel_sizes=[3] * len(conv_channels),
+                #         batchnorm=self.batchnorm,
+                #         dropout=self.dropout,
+                #         activation_type=self.activation_type,
+                #         activation_params=self.activation_params,
+                #     )
+                # )
         
                 block_in_channels = conv_channels[-1]
                 conv_channels = []
