@@ -161,7 +161,7 @@ class BasicConv2d(nn.Module):
         elif activation == 'lrelu':
             self.activation = nn.LeakyReLU(inplace=True)
         else:
-            self.activation = nn.Linear()
+            self.activation = nn.Identity()
 
     def forward(self, x):
         x = self.conv(x)
@@ -173,7 +173,7 @@ class InceptionResNetBlock(nn.Module):
     def __init__(self, in_channels, branches, out_concat=128, scale=True, pool_branch=None, activation='relu'):
         super().__init__()
         
-        self.seq_branch = []
+        self.seq_branch = nn.ModuleList()
         for branch in branches:
             self.seq_branch.append(nn.Sequential(*self.create_layers(in_channels, branch, activation)))
         
@@ -182,8 +182,14 @@ class InceptionResNetBlock(nn.Module):
             input_concat += b[-1][1]
 
         if pool_branch is not None:
-            self.seq_branch.append(POOLINGS[pool_branch](kernel_size=3, padding=1, stride=1))
-            input_concat += in_channels
+            c = branches[0][-1][1]
+            self.seq_branch.append(
+                nn.Sequential(
+                    POOLINGS[pool_branch](kernel_size=3, padding=1, stride=1),
+                    BasicConv2d(in_channels, c, kernel_size=1, activation=activation)
+                )
+            )
+            input_concat += c
 
         self.concat_branch1x1 = BasicConv2d(input_concat, out_concat, kernel_size=1, padding='same', activation=activation)
         self.scale = scale
