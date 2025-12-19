@@ -224,6 +224,7 @@ class YourCNN(CNN):
         activation_params: dict = {},
         pooling_type: str = "max",
         pooling_params: dict = {},
+        **kw
     ):
         self.batchnorm = True
         self.dropout = 0.4
@@ -269,7 +270,7 @@ class YourCNN(CNN):
                 if (i + 1) % self.pool_every == 0:
                     layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
         # ========================
-        layers += [InceptionResNetBlock(block_in_channels, [(1, 64), (3, 64), (3, 64)], [(1, 32)], [(3,32), (3,32)], 32)]
+        layers += [InceptionResNetBlock(block_in_channels, [(1, 64), (3, 64), (3, 64)], [(1, 32)], [(3,32), (3,32)], block_in_channels)]
         seq = nn.Sequential(*layers)
         return seq
 

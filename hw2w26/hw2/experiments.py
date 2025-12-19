@@ -132,6 +132,8 @@ def cnn_experiment(
     channels = list(itertools.chain.from_iterable(
        [[k] * layers_per_block for k in filters_per_layer]
     ))
+    print(channels)
+
     num_classes = 10
     kw = dict(kw)  
     kw["conv_params"] = {"kernel_size": 5, "padding": 2}
