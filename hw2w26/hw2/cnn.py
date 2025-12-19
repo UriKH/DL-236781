@@ -158,6 +158,8 @@ class BasicConv2d(nn.Module):
         self.activation = activation
         if activation == 'relu':
             self.activation = nn.ReLU(inplace=True)
+        elif activation == 'lrelu':
+            self.activation = nn.LReLU(inplace=True)
         else:
             self.activation = nn.Linear()
 
@@ -168,47 +170,43 @@ class BasicConv2d(nn.Module):
         return x
             
 class InceptionResNetBlock(nn.Module):
-    def __init__(self, in_channels, branch_a, branch_b=None, branch_c=None, out_concat=128, scale=True):
+    def __init__(self, in_channels, branches, out_concat=128, scale=True, pool_branch=None, activation='relu'):
         super().__init__()
         
-        self.branch_a = nn.Sequential(*self.create_layers(in_channels, branch_a))
-        self.branch_b = nn.Sequential(*self.create_layers(in_channels, branch_b)) if branch_b else None
-        self.branch_c = nn.Sequential(*self.create_layers(in_channels, branch_c)) if branch_c else None
+        self.seq_brch = []
+        for branch in branches:
+            self.seq_brch.append(nn.Sequential(*self.create_layers(in_channels, branch, activation)))
+        
+        input_concat = 0
+        for b in branches:
+            input_concat += b[-1][1]
 
-        # input_concat = branch_a[-1][1] + branch_b[-1][1] if branch_b else 0 + branch_c[-1][1] if branch_c else 0
-        input_concat = branch_a[-1][1]
-        if branch_b:
-            input_concat += branch_b[-1][1]
-        if branch_c:
-            input_concat += branch_c[-1][1]
+        if pool_branch is not None:
+            self.seq_brch.append(POOLINGS[pool_branch](kenrel_size=2, padding='same', stride=2))
 
-        self.concat_branch1x1 = BasicConv2d(input_concat, out_concat, kernel_size=1, padding='same', activation='relu')
+        self.concat_branch1x1 = BasicConv2d(input_concat, out_concat, kernel_size=1, padding='same', activation=activation)
         self.scale = scale
-        # self.scale_res = Lambda(lambda x: x * 0.1)
         self.bn = nn.BatchNorm2d(in_channels)
     
-    def create_layers(self, in_channels, branch_tuples):
+    def create_layers(self, in_channels, branch_tuples, activation):
         last = in_channels
         layers = []
         for i, (kernel_size, channels) in enumerate(branch_tuples):
-            layers.append(BasicConv2d(last, channels, kernel_size=kernel_size, padding='same'))
+            layers.append(BasicConv2d(last, channels, kernel_size=kernel_size, padding='same', activation=activation))
             last = channels
         return layers
 
     def forward(self, x):
-        branch_a = self.branch_a(x)
-        branch_b = self.branch_b(x)
-        branch_c = self.branch_c(x)
-
-        outputs = [branch_a, branch_b, branch_c]
+        outputs = []
+        for i, branch in enumerate(self.seq_branches):
+            outputs.append(self.seq_branches[i](x))
+        
         mixed = torch.cat(outputs, 1)   # concatenation of the a, b, c branches
 
         mixed = self.concat_branch1x1(mixed)    # convolution on the concatenated branch
-        # if self.scale:
-        #     mixed = self.scale_res(mixed)   # scale down the mixed branches impact
         x = x.add(mixed)
         
-        x = nn.ReLU()(self.bn(x))
+        x = nn.LReLU()(self.bn(x))
         return x
         
 class YourCNN(CNN):    
@@ -249,15 +247,17 @@ class YourCNN(CNN):
                     InceptionResNetBlock(
                         block_in_channels, 
                         [(1, c), (3, c), (3, c)],
-                        [(3, c), (3, c)],
+                        [(1, c), (3, c)],
                         [(1, c)],
-                        block_in_channels
+                        block_in_channels,
+                        pool_branch='avg',
+                        activation='lrelu'
                     )
                 )
                 layers.append(nn.Dropout2d(self.dropout))
                 layers.append(
-                    BasicConv2d(
-                        block_in_channels, c, kernel_size=3, activation='relu', padding='same'
+                    BaisicConv2d(
+                        block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
                     )
                 )
                 layers.append(nn.Dropout2d(self.dropout))
@@ -493,3 +493,6 @@ class ResNet(CNN):
         seq = nn.Sequential(*layers)
         return seq
 
+import torch
+import torch.nn as nn
+import itertools as it
