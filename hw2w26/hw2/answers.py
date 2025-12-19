@@ -390,30 +390,39 @@ An equation: $e^{i\pi} -1 = 0$
 
 part6_q1 = r"""
 **Your answer:**
+1. The model preformed quite bad on both images.
+In the first image it wronglly classified one of the dolphins as a surfboard while the other two as people, and in the second image classified two of the dogs as cats while it didn't find the cat in the image at all.
 
+The confidances of the model on the first image where as follows:
+- 0.47 person (true = dolphin)
+- 0.9 person (true = dolphin)
+- 0.37 surfboard (true = dolphin)
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+In the second image:
+- 0.65 cat (true = dog)
+- 0.39 cat (true = dog)
+- 0.5 dog (true = dog)
 
+2. **Reasons for failure:**
+- The model hasn't been trained on dolphin images and thus is not able to classify images as dolphins at all.
+- The model hasn't been trained on special illumination conditions of dolphins and thus unable to detect the dolphins using the dolphin features it was able to detect on training.
+- The model hasn't been trained on different breeds of dogs therefore unable to classify two of the dogs. Probably the same is true for cats as it mistook the dogs for cats with quite high confidance for one of them while it didn't recognize the true cat in the image at all.
+
+**Possible solutions:**
+- Train the model using more data and diverse data (solving dog detection + cat detection).
+- Train the model on augmented data with dicersity of augmentations like bad illumination of the object / blurry images of it etc.
+
+3. In order to attack an object detection model such as YOLO, we must first define the attack objective, for example: object disappearance, misclassification, bounding box distortion, or generating false positives.
+
+PGD aims to find a small adversarial perturbation added to the input image that significantly degrades the model’s predictions while keeping the perturbation bounded (under some constraints).
+
+PGD is a white-box attack, meaning the attacker has full access to the model architecture and trained weights and thus can compute gradients with respect to the input. This allows defining or reusing a suitable detection loss that aligns with the attack objective.
+
+The attack is performed by iteratively updating the input image in the direction of the gradient that maximizes the attack loss, while projecting the perturbed image back to the allowed bounded region. This process is repeated until the attack succeeds.
 """
 
 
-part6_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
-"""
+part6_q2 = r""" IGNORE THIS """
 
 
 part6_q3 = r"""
