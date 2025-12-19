@@ -151,8 +151,8 @@ def cnn_experiment(
 
     model = ArgMaxClassifier(base_model).to(device)
 
-    with torch.no_grad():
-        model.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.01) if hasattr(m, "weight") else None)
+    #with torch.no_grad():
+    #    model.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, "weight") else None)
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=reg)

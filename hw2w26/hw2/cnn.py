@@ -227,7 +227,7 @@ class YourCNN(CNN):
         **kw
     ):
         self.batchnorm = True
-        self.dropout = 0.2
+        self.dropout = 0.3
         super().__init__(
             in_size, out_classes, channels, pool_every, hidden_dims, conv_params,
             activation_type, activation_params, pooling_type, pooling_params
@@ -248,37 +248,25 @@ class YourCNN(CNN):
                 layers.append(
                     InceptionResNetBlock(
                         block_in_channels, 
-                        [(1, conv_channels), (3, conv_channels), (3, conv_channels)],
-                        [(3, conv_channels), (3, conv_channels)],
-                        [(1, conv_channels)],
+                        [(1, c), (3, c), (3, c)],
+                        [(3, c), (3, c)],
+                        [(1, c)],
                         block_in_channels
                     )
                 )
-                layers.append(nn.Dropout(self.dropout))
+                layers.append(nn.Dropout2d(self.dropout))
                 layers.append(
                     BasicConv2d(
-                        block_in_channels, conv_channels, 'relu', padding='same'
+                        block_in_channels, c, kernel_size=3, activation='relu', padding='same'
                     )
                 )
-                layers.append(nn.Dropout(self.dropout))
-                # ResidualBlock(
-                #         in_channels=block_in_channels,
-                #         channels=conv_channels,
-                #         kernel_sizes=[3] * len(conv_channels),
-                #         batchnorm=self.batchnorm,
-                #         dropout=self.dropout,
-                #         activation_type=self.activation_type,
-                #         activation_params=self.activation_params,
-                #     )
-                # )
+                layers.append(nn.Dropout2d(self.dropout))
         
                 block_in_channels = conv_channels[-1]
                 conv_channels = []
         
                 if (i + 1) % self.pool_every == 0:
                     layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
-        # ========================
-        # layers += [InceptionResNetBlock(block_in_channels, [(1, 64), (3, 64), (3, 64)], [(1, 32)], [(3,32), (3,32)], block_in_channels)]
         seq = nn.Sequential(*layers)
         return seq
 
