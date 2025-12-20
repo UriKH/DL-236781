@@ -325,7 +325,7 @@ Even with the same total parameters, the first model learns a simpler separator 
 
 4) Selecting the threshold shifts the decision boundary without changing the learned features, trading off false positives vs false negatives. It improved the results on the test set because the data overlap region might be shaped so that moving the boundary slightly reduces a lot of errors on one side, while adding only a few on the other, leading to a “sweet spot” threshold.
 
-"""
+""" 
 
 # ==============
 # Part 4 (CNN) answers
