@@ -138,7 +138,6 @@ def cnn_experiment(
     kw['dropout'] = 0.5
     kw['batchnorm'] = True
 
-
     base_model = model_cls(
         in_size=ds_train[0][0].shape,
         out_classes=num_classes,

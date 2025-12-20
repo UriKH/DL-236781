@@ -232,8 +232,9 @@ class YourCNN(CNN):
         **kw
     ):
         self.batchnorm = True
-        self.dropout = 0.25
+        self.dropout = 0.2
         self.dropout_mlp = 0.1
+        self.dropout_delta = 0.005
         super().__init__(
             in_size, out_classes, channels, pool_every, hidden_dims, conv_params,
             activation_type, activation_params, pooling_type, pooling_params
@@ -263,11 +264,12 @@ class YourCNN(CNN):
         layers = []
         block_in_channels = in_channels
         conv_channels = []
+        depth = 0
+        prob_delta = 0.0
         
         for i, c in enumerate(self.channels):
             conv_channels.append(c)
         
-            end_of_block = ((i + 1) % self.pool_every == 0) or ((i + 1) == len(self.channels))
             layers.append(
                 InceptionResNetBlock(
                     block_in_channels, 
@@ -283,15 +285,21 @@ class YourCNN(CNN):
             )
             layers.append(nn.Dropout2d(self.dropout))
             layers.append(
-                BasicConv2d(
-                    block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
+                ResidualBlock(
+                    block_in_channels, [c], [5], True, self.dropout, 'lrelu'  
                 )
             )
-            layers.append(nn.Dropout2d(self.dropout))
+            #layers.append(
+            #    BasicConv2d(
+            #        block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
+            #    )
+            #)
+            #layers.append(nn.Dropout2d(self.dropout))
         
             block_in_channels = conv_channels[-1]
             conv_channels = []
-        
+            depth += 1
+
             if (i + 1) % self.pool_every == 0:
                 layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
         seq = nn.Sequential(*layers)
