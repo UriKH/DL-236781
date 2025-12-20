@@ -268,33 +268,32 @@ class YourCNN(CNN):
             conv_channels.append(c)
         
             end_of_block = ((i + 1) % self.pool_every == 0) or ((i + 1) == len(self.channels))
-            if end_of_block:
-                layers.append(
-                    InceptionResNetBlock(
-                        block_in_channels, 
-                        [
-                            [(1, c), (3, c), (3, c)],
-                            [(1, c), (3, c)],
-                            [(1, c)]
-                        ],
-                        block_in_channels,
-                        pool_branch='avg',
-                        activation='lrelu'
-                    )
+            layers.append(
+                InceptionResNetBlock(
+                    block_in_channels, 
+                    [
+                        [(1, c), (3, c), (3, c)],
+                        [(1, c), (3, c)],
+                        [(1, c)]
+                    ],
+                    block_in_channels,
+                    pool_branch='avg',
+                    activation='lrelu'
                 )
-                layers.append(nn.Dropout2d(self.dropout))
-                layers.append(
-                    BasicConv2d(
-                        block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
-                    )
+            )
+            layers.append(nn.Dropout2d(self.dropout))
+            layers.append(
+                BasicConv2d(
+                    block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
                 )
-                layers.append(nn.Dropout2d(self.dropout))
+            )
+            layers.append(nn.Dropout2d(self.dropout))
         
-                block_in_channels = conv_channels[-1]
-                conv_channels = []
+            block_in_channels = conv_channels[-1]
+            conv_channels = []
         
-                if (i + 1) % self.pool_every == 0:
-                    layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
+            if (i + 1) % self.pool_every == 0:
+                layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
         seq = nn.Sequential(*layers)
         return seq
 
