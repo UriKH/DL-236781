@@ -232,11 +232,30 @@ class YourCNN(CNN):
         **kw
     ):
         self.batchnorm = True
-        self.dropout = 0.3
+        self.dropout = 0.25
+        self.dropout_mlp = 0.1
         super().__init__(
             in_size, out_classes, channels, pool_every, hidden_dims, conv_params,
             activation_type, activation_params, pooling_type, pooling_params
         )
+
+        
+        in_dim = self._n_features()
+        dims = self.hidden_dims + [out_classes]
+        nonlins = [activation_type] * len(self.hidden_dims) + [nn.Identity()]
+        
+        layers = []
+        feats = [in_dim] + list(dims)
+        for i in range(len(feats) - 1):
+            layers += [nn.Linear(feats[i], feats[i + 1])]
+            nonlin = nonlins[i]
+            if isinstance(nonlin, str):
+                layers += [ ACTIVATIONS[nonlin](**ACTIVATION_DEFAULT_KWARGS[nonlin]) ]
+            else:
+                layers += [ nonlin ]
+            layers += [nn.Dropout2d(self.dropout_mlp)]
+
+        self.mlp = nn.Sequential(*layers)
 
     def _make_feature_extractor(self):
         in_channels, _, _ = tuple(self.in_size)
