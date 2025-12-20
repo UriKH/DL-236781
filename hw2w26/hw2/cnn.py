@@ -158,8 +158,10 @@ class BasicConv2d(nn.Module):
         self.activation = activation
         if activation == 'relu':
             self.activation = nn.ReLU(inplace=True)
+        elif activation == 'lrelu':
+            self.activation = nn.LeakyReLU(inplace=True)
         else:
-            self.activation = nn.Linear()
+            self.activation = nn.Identity()
 
     def forward(self, x):
         x = self.conv(x)
@@ -168,47 +170,50 @@ class BasicConv2d(nn.Module):
         return x
             
 class InceptionResNetBlock(nn.Module):
-    def __init__(self, in_channels, branch_a, branch_b=None, branch_c=None, out_concat=128, scale=True):
+    def __init__(self, in_channels, branches, out_concat=128, scale=True, pool_branch=None, activation='relu'):
         super().__init__()
         
-        self.branch_a = nn.Sequential(*self.create_layers(in_channels, branch_a))
-        self.branch_b = nn.Sequential(*self.create_layers(in_channels, branch_b)) if branch_b else None
-        self.branch_c = nn.Sequential(*self.create_layers(in_channels, branch_c)) if branch_c else None
+        self.seq_branch = nn.ModuleList()
+        for branch in branches:
+            self.seq_branch.append(nn.Sequential(*self.create_layers(in_channels, branch, activation)))
+        
+        input_concat = 0
+        for b in branches:
+            input_concat += b[-1][1]
 
-        # input_concat = branch_a[-1][1] + branch_b[-1][1] if branch_b else 0 + branch_c[-1][1] if branch_c else 0
-        input_concat = branch_a[-1][1]
-        if branch_b:
-            input_concat += branch_b[-1][1]
-        if branch_c:
-            input_concat += branch_c[-1][1]
+        if pool_branch is not None:
+            c = branches[0][-1][1]
+            self.seq_branch.append(
+                nn.Sequential(
+                    POOLINGS[pool_branch](kernel_size=3, padding=1, stride=1),
+                    BasicConv2d(in_channels, c, kernel_size=1, activation=activation)
+                )
+            )
+            input_concat += c
 
-        self.concat_branch1x1 = BasicConv2d(input_concat, out_concat, kernel_size=1, padding='same', activation='relu')
+        self.concat_branch1x1 = BasicConv2d(input_concat, out_concat, kernel_size=1, padding='same', activation=activation)
         self.scale = scale
-        # self.scale_res = Lambda(lambda x: x * 0.1)
         self.bn = nn.BatchNorm2d(in_channels)
     
-    def create_layers(self, in_channels, branch_tuples):
+    def create_layers(self, in_channels, branch_tuples, activation):
         last = in_channels
         layers = []
         for i, (kernel_size, channels) in enumerate(branch_tuples):
-            layers.append(BasicConv2d(last, channels, kernel_size=kernel_size, padding='same'))
+            layers.append(BasicConv2d(last, channels, kernel_size=kernel_size, padding='same', activation=activation))
             last = channels
         return layers
 
     def forward(self, x):
-        branch_a = self.branch_a(x)
-        branch_b = self.branch_b(x)
-        branch_c = self.branch_c(x)
-
-        outputs = [branch_a, branch_b, branch_c]
+        outputs = []
+        for i, branch in enumerate(self.seq_branch):
+            outputs.append(self.seq_branch[i](x))
+        
         mixed = torch.cat(outputs, 1)   # concatenation of the a, b, c branches
 
         mixed = self.concat_branch1x1(mixed)    # convolution on the concatenated branch
-        # if self.scale:
-        #     mixed = self.scale_res(mixed)   # scale down the mixed branches impact
         x = x.add(mixed)
         
-        x = nn.ReLU()(self.bn(x))
+        x = nn.LeakyReLU()(self.bn(x))
         return x
         
 class YourCNN(CNN):    
@@ -224,19 +229,13 @@ class YourCNN(CNN):
         activation_params: dict = {},
         pooling_type: str = "max",
         pooling_params: dict = {},
+        **kw
     ):
         self.batchnorm = True
-        self.dropout = 0.4
+        self.dropout = 0.3
         super().__init__(
             in_size, out_classes, channels, pool_every, hidden_dims, conv_params,
             activation_type, activation_params, pooling_type, pooling_params
-        )
-        
-        dims = [4096, 2048, 1024]
-        self.mlp = MLP(
-            in_dim = self._n_features(),
-            dims = dims + [self.out_classes],
-            nonlins = ['relu'] * len(dims) + [nn.Identity()]
         )
 
     def _make_feature_extractor(self):
@@ -252,24 +251,31 @@ class YourCNN(CNN):
             end_of_block = ((i + 1) % self.pool_every == 0) or ((i + 1) == len(self.channels))
             if end_of_block:
                 layers.append(
-                    ResidualBlock(
-                        in_channels=block_in_channels,
-                        channels=conv_channels,
-                        kernel_sizes=[3] * len(conv_channels),
-                        batchnorm=self.batchnorm,
-                        dropout=self.dropout,
-                        activation_type=self.activation_type,
-                        activation_params=self.activation_params,
+                    InceptionResNetBlock(
+                        block_in_channels, 
+                        [
+                            [(1, c), (3, c), (3, c)],
+                            [(1, c), (3, c)],
+                            [(1, c)]
+                        ],
+                        block_in_channels,
+                        pool_branch='avg',
+                        activation='lrelu'
                     )
                 )
+                layers.append(nn.Dropout2d(self.dropout))
+                layers.append(
+                    BasicConv2d(
+                        block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
+                    )
+                )
+                layers.append(nn.Dropout2d(self.dropout))
         
                 block_in_channels = conv_channels[-1]
                 conv_channels = []
         
                 if (i + 1) % self.pool_every == 0:
                     layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
-        # ========================
-        layers += [InceptionResNetBlock(block_in_channels, [(1, 64), (3, 64), (3, 64)], [(1, 32)], [(3,32), (3,32)], 32)]
         seq = nn.Sequential(*layers)
         return seq
 
@@ -496,3 +502,6 @@ class ResNet(CNN):
         seq = nn.Sequential(*layers)
         return seq
 
+import torch
+import torch.nn as nn
+import itertools as it

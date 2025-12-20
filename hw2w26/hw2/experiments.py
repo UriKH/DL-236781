@@ -129,14 +129,15 @@ def cnn_experiment(
     dl_train = DataLoader(ds_train, batch_size=bs_train, shuffle=True)
     dl_test  = DataLoader(ds_test,  batch_size=bs_test,  shuffle=False)
     # channels = filters_per_layer * layers_per_block
-    channels = list(itertools.chain.from_iterable(
-       [[k] * layers_per_block for k in filters_per_layer]
-    ))
+    channels = list(itertools.chain.from_iterable([[k] * layers_per_block for k in filters_per_layer]))
     num_classes = 10
-    kw = dict(kw)  
-    kw.setdefault("conv_params", {"kernel_size": 3, "padding": 1})
-    kw.setdefault("pooling_params", {"kernel_size": 2, "stride": 2})
-    kw.setdefault('activation_type', 'lrelu')
+    kw = dict(kw)
+    kw["conv_params"] = {"kernel_size": 5, "padding": 2}
+    kw["pooling_params"] = {"kernel_size": 2, "stride": 2}
+    kw['activation_type'] = 'lrelu'
+    kw['dropout'] = 0.5
+    kw['batchnorm'] = True
+
 
     base_model = model_cls(
         in_size=ds_train[0][0].shape,
@@ -146,11 +147,12 @@ def cnn_experiment(
         hidden_dims=hidden_dims,
         **kw
     )
+    print(base_model)
 
     model = ArgMaxClassifier(base_model).to(device)
 
-    with torch.no_grad():
-        model.apply(lambda m: torch.nn.init.kaiming_uniform_(m.weight) if hasattr(m, "weight") else None)
+    #with torch.no_grad():
+    #    model.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, "weight") else None)
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=reg)
