@@ -59,6 +59,7 @@ Therefore, each block has shape $(64,1024)$.
 
 part1_q2 = r"""
 **Your answer:**
+
 Yes, second order derivatives (Hessian) can be helpful for optimization (but are not commonly used as it is quite expensive to compute unlike the gradient).
 
 When second order information is useful when the condition number is high.
@@ -127,6 +128,7 @@ def part2_dropout_hp():
 
 part2_q1 = r"""
 **Your answer:**
+
 1. Yes, the graphs match the theoretical expectations.
 
 - Without Dropout (blue curve): In the train_acc graph, the accuracy reaches fast to nearly 80% However, in the test_acc graph, the performance is at a much lower level (~26%). In addition, the test_loss graph shows the loss decreasing initially but then starting to rise again. This configurations demonstrate overfitting - the model is failing to generalize to new data.
@@ -142,6 +144,7 @@ part2_q1 = r"""
 
 part2_q2 = r"""
 **Your answer:**
+
 Yes, it is possible for the test loss to decrease while the test accuracy also decreases. Cross-entropy loss depends on the predicted probabilities, while accuracy only depends on whether the argmax prediction is correct. For example, suppose we have 2 test samples $\{ x_1, x_2 \}$, both with true label 1.
 
 $$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - {\vectr{y}} \log(\hat{\vec{y}})$$
@@ -179,9 +182,45 @@ Differences of gradient descent (GD) and stochastic gradient descent (SGD):
 
 (3) Noise - GD get deterministic path and the loss usually decreases smoothly while in SGD each gradient is noisy (since it is computed on different samples each epoch) and the randomness in the sampling gives different paths.
 
-2. 
+2. Yes, momentum can be used with GD. Momentum can accelerate convergence by accumulating velocity in directions with consistent gradients often leading to faster and stable convergence. The main difference from SGD is that in GD momentum is not primarily “noise smoothing”.
 
-3.
+3.  A) Let the dataset be $\mathcal{D}=\{x_i\}_{i=1}^N$ and the loss be $\ell(\theta; x_i)$.
+
+$L(\theta)=\sum_{i=1}^N \ell(\theta;x_i)$
+
+hence its gradient is:
+
+$\nabla_\theta L(\theta)=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$
+
+Assume we partition the dataset into disjoint batches $B_1,\dots,B_K$ such that $B_j\cap B_k=\emptyset$ for $j\neq k$ and $\bigcup_{k=1}^K B_k=\mathcal{D}$.
+The batch losses:
+
+$L_k(\theta)=\sum_{i\in B_k}\ell(\theta;x_i)$
+
+Then, by linearity:
+
+$\nabla_\theta\Big(\sum_{k=1}^K L_k(\theta)\Big)
+=\sum_{k=1}^K \nabla_\theta L_k(\theta)
+=\sum_{k=1}^K \sum_{i\in B_k} \nabla_\theta \ell(\theta;x_i)
+=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$
+
+Therefore, a backward pass on the sum of losses over all disjoint batches is equivalent to GD.
+
+This equivalence assumes the objective is a simple loss evaluated at the same parameters $\theta$.
+If the forward computation depends on batch specific statistics or randomness
+(e.g., BatchNorm, Dropout), then training in separate batches changes the computed function and the resulting gradient
+will not match the gradient of a single full batch forward.
+
+
+B) In the proposed approach we run forward one pass per batch without backpropagation, and only at the end call a single backward pass on the sum of all batch losses.
+
+- Each forward pass produces intermediate tensors (activations) that are required to compute gradients later.
+- Since no backward pass has been executed, these saved intermediates cannot be freed, because they are needed for the eventual backward call.
+
+Therefore, even if a single batch fits in memory, the memory footprint accumulates across batches. After processing $t$ batches, we are effectively storing the activations for all $t$ forwards.
+
+c) To solve this issue we can use gradient accumulation. For each batch, we will run a forward pass and immediately call backward(), but delay the parameter update step until we have processed all batches. This way, the computation graph of each batch can be freed right after its backward pass, so memory does not accumulate across batches.
+
 
 """
 
@@ -236,41 +275,57 @@ def part3_optim_hp():
 part3_q1 = r"""
 **Your answer:**
 
+1. A) Optimization error - the failure of an algorithm to find the absolute best set of parameters, often getting stuck in local minima.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+B) Generalization error - the difference between a machine learning model's performance on training data versus its performance on new, unseen data, measuring how well it generalizes.
 
+c) Approximation error - the difference between a true, exact value and its estimated or approximated value, occurring due to rounding, model limitations, or measurement inaccuracies.
+
+2. Based on those plots:
+
+A) Optimization error — not high
+
+We can see that the train loss drops quickly and stayes low, and the train accuracy is ~93–94%. That means the optimizer got into a good minimum for this model.
+
+B) Generalization error — high
+
+We can see that the train accuracy 93–94% while test accuracy is lower and noisier (85–91%), and test loss is higher and swinging compared to train loss.
+
+C) Approximation error - not high
+
+The decision boundary is non-linear and can bend to complex class structure, which suggests the hypothesis class is sufficiently
+expressive and the model is not underfitting. The training errors are probbably because of class overlap / noise in the data (regions where red and blue points are mixed), rather than by the model being too simple to represent the true boundary.
 """
 
 part3_q2 = r"""
 **Your answer:**
+- An example scenario where we would prefer to optimize for FPR at the cost of increasing FNR: Spam filter for email
 
+We would rather be careful about calling something “spam”, because the cost of a false positive - a real important email gets sent to spam and we will miss critical information, is much higher than the cost of a false negative - more spam slips through.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+- An example scenario where we would prefer to optimize for FNR at the cost of increasing FPR: Medical screening test
 
+Missing a true positive - a sick person is told he is healthy can cause serious harm, more than a false alarm - a healthy person get flagged and mabye has to do more tests.
 """
 
 part3_q3 = r"""
 **Your answer:**
 
+1) Decision boundaries and model performance you obtained for the columns (fixed depth):
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+As width increases, the network can represent more complicated functions. We can see that the decision boundary goes from simple and almost linear to more curved and comlex, which fits the data structure better.
 
-"""
+2) Decision boundaries and model performance you obtained for the rows (fixed width):
+
+As depth increases, the model can build features in stages: early layers learn simple patterns, later layers combine them into more complex ones. We can see that the decision boundary becomes more expressive and structured.
+
+3) depth=1,width=32 vs depth=4,width=8:
+
+Even with the same total parameters, the first model learns a simpler separator that looks like underfitting to the curved structure, while the second model can build multi step features, which tends to represent curved boundaries more efficiently.
+
+4) Selecting the threshold shifts the decision boundary without changing the learned features, trading off false positives vs false negatives. It improved the results on the test set because the data overlap region might be shaped so that moving the boundary slightly reduces a lot of errors on one side, while adding only a few on the other, leading to a “sweet spot” threshold.
+
+""" 
 
 # ==============
 # Part 4 (CNN) answers
