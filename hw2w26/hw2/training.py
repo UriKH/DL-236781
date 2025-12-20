@@ -85,7 +85,10 @@ class Trainer(abc.ABC):
             # ====== YOUR CODE: ======
             # import time
             # time.sleep(1)
+            self.model.train()
             train_result = self.train_epoch(dl_train, **kw)
+
+            self.model.eval()
             test_result  = self.test_epoch(dl_test,  **kw)
             
             train_loss.append(sum(train_result.losses) / len(train_result.losses))
@@ -120,6 +123,10 @@ class Trainer(abc.ABC):
                 epochs_without_improvement += 1
                 if early_stopping is not None and epochs_without_improvement >= early_stopping:
                     break
+
+            del train_result, test_result
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
                 # ========================
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
@@ -278,16 +285,31 @@ class ClassifierTrainer(Trainer):
         #  - Update parameters
         #  - Classify and calculate number of correct predictions
         # ====== YOUR CODE: ======
-        self.optimizer.zero_grad()
 
+        self.optimizer.zero_grad(set_to_none=True)
         scores = self.model(X)
         loss = self.loss_fn(scores, y)
-        loss.backward() 
-        self.optimizer.step() 
+        loss.backward()
+        self.optimizer.step()
 
-        preds = self.model.classify_scores(scores)
-        num_correct = int((preds == y).sum().item())
+        with torch.no_grad():
+            preds = self.model.classify_scores(scores)
+            num_correct = int((preds == y).sum().item())
+
         batch_loss = float(loss.item())
+        del scores, loss, preds
+
+        # self.optimizer.zero_grad(set_to_none=True)
+
+        # scores = self.model(X)
+        # loss = self.loss_fn(scores, y)
+        # loss.backward()
+        # self.optimizer.step() 
+        
+        # with torch.no_grad():
+        #    preds = self.model.classify_scores(scores)
+        # num_correct = int((preds == y).sum().item())
+        # batch_loss = float(loss.item())
         # ========================
 
         return BatchResult(batch_loss, num_correct)

@@ -233,13 +233,15 @@ class YourCNN(CNN):
     ):
         self.batchnorm = True
         self.dropout = 0.2
+        self.dropout_stem = 0.1
         self.dropout_mlp = 0.1
-        self.dropout_delta = 0.005
+        self.stem_width1 = 8
+        self.stem_width2 = 16
+        
         super().__init__(
             in_size, out_classes, channels, pool_every, hidden_dims, conv_params,
             activation_type, activation_params, pooling_type, pooling_params
         )
-
         
         in_dim = self._n_features()
         dims = self.hidden_dims + [out_classes]
@@ -257,6 +259,9 @@ class YourCNN(CNN):
             layers += [nn.Dropout2d(self.dropout_mlp)]
 
         self.mlp = nn.Sequential(*layers)
+        with torch.no_grad():
+            self.feature_extractor.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, "weight") else None)
+            self.mlp.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, 'weight') else None)
 
     def _make_feature_extractor(self):
         in_channels, _, _ = tuple(self.in_size)
@@ -267,16 +272,28 @@ class YourCNN(CNN):
         depth = 0
         prob_delta = 0.0
         
+        layers.append(
+            nn.Sequential(
+                BasicConv2d(block_in_channels, self.stem_width1, kernel_size=5, padding='same', activation='lrelu'),
+                nn.Dropout2d(self.dropout_stem),
+                BasicConv2d(self.stem_width1, self.stem_width2, kernel_size=5, padding='same', activation='lrelu'),
+                nn.Dropout2d(self.dropout_stem)
+            )
+        )
+        block_in_channels = self.stem_width2
+
         for i, c in enumerate(self.channels):
             conv_channels.append(c)
-        
+            
+            c_frac = int(c / 4)
+
             layers.append(
                 InceptionResNetBlock(
                     block_in_channels, 
                     [
-                        [(1, c), (3, c), (3, c)],
-                        [(1, c), (3, c)],
-                        [(1, c)]
+                        [(1, c_frac), (3, c_frac), (3, c_frac)],
+                        [(1, c_frac), (3, c_frac)],
+                        [(1, c_frac)]
                     ],
                     block_in_channels,
                     pool_branch='avg',
