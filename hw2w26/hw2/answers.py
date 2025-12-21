@@ -459,19 +459,19 @@ In the second image:
 - 0.5 dog (true = dog)
 
 2. **Reasons for failure:**
-- The model hasn't been trained on dolphin images and thus is not able to classify images as dolphins at all.
-- The model hasn't been trained on special illumination conditions of dolphins and thus unable to detect the dolphins using the dolphin features it was able to detect on training.
-- The model hasn't been trained on different breeds of dogs therefore unable to classify two of the dogs. Probably the same is true for cats as it mistook the dogs for cats with quite high confidance for one of them while it didn't recognize the true cat in the image at all.
+- The model hasn't been trained on dolphin images and thus is not able to classify images as dolphins at all.  
+- The model hasn't been trained on special illumination conditions of dolphins and thus unable to detect the dolphins using the dolphin features it was able to detect on training.  
+- The model hasn't been trained on different breeds of dogs therefore unable to classify two of the dogs. Probably the same is true for cats as it mistook the dogs for cats with quite high confidance for one of them while it didn't recognize the true cat in the image at all.  
 
-**Possible solutions:**
-- Train the model using more data and diverse data (solving dog detection + cat detection).
-- Train the model on augmented data with dicersity of augmentations like bad illumination of the object / blurry images of it etc.
+**Possible solutions:**  
+- Train the model using more data and diverse data (solving dog detection + cat detection).  
+- Train the model on augmented data with dicersity of augmentations like bad illumination of the object / blurry images of it etc.  
 
-3. In order to attack an object detection model such as YOLO, we must first define the attack objective, for example: object disappearance, misclassification, bounding box distortion, or generating false positives.
+3. In order to attack an object detection model such as YOLO, we must first define the attack objective, for example: object disappearance, misclassification, bounding box distortion, or generating false positives.  
 
-PGD aims to find a small adversarial perturbation added to the input image that significantly degrades the model’s predictions while keeping the perturbation bounded (under some constraints).
+PGD aims to find a small adversarial perturbation added to the input image that significantly degrades the model’s predictions while keeping the perturbation bounded (under some constraints).  
 
-PGD is a white-box attack, meaning the attacker has full access to the model architecture and trained weights and thus can compute gradients with respect to the input. This allows defining or reusing a suitable detection loss that aligns with the attack objective.
+PGD is a white-box attack, meaning the attacker has full access to the model architecture and trained weights and thus can compute gradients with respect to the input. This allows defining or reusing a suitable detection loss that aligns with the attack objective.  
 
 The attack is performed by iteratively updating the input image in the direction of the gradient that maximizes the attack loss, while projecting the perturbed image back to the allowed bounded region. This process is repeated until the attack succeeds.
 """
@@ -483,14 +483,18 @@ part6_q2 = r""" IGNORE THIS """
 part6_q3 = r"""
 **Your answer:**
 
+We chose three images:
+1. Blurry image of people walking: It seems that the model detects all of of the people quite well altough many of them are blurry due to the movement. This is a good case in which the model classified correctly despite the blurr.
+Note that we can find imperfections like double classification of people (in the far right of the image) or that the model missed the handbag held by the man with the green shirt.
+2. A set of chiuaua images compared to cupcakes (we intentionally chose an image containing many examples to demonstrate the issue but we could have off course cut only one bad example :) ). 
+In this image we can see that the model, in some contexts, classified cupckaes as dogs (clear example in the top right) or as a teddy bear apart from one case (bottom left).
+This is an example of model bias - e.g. the model probably learned that teddy bears are yellow-ish and could be difformed in some ways due to their fluffy nature :).
+Thus the model miss-classified the cakes altough it did know what a cake is (there is a correct classification) but was clearlly biased towards the teddy bear (or chiuaua in some cases).
+3. A busy street: In this image we can see that although most of the faces are in high resolution and not blurred at all, due to the fact that a part of the face is occluded by another person, the model failed to classify the part of the person with only some of their face appearing.
+Noteably the people in the left part of the image which are not classified as anything.
+This demonstrates the occlusion pitfall in object detection.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+In general it seems that the model preformed quite well only on the first and last images as it failed spectacularly on the second one. 
 """
 
 part6_bonus = r"""
