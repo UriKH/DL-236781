@@ -354,28 +354,82 @@ def part4_optim_hp():
 part4_q1 = r"""
 **Your answer:**
 
+Differences between the regular block and the bottleneck block in terms of:
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+1) Number of parameters:
 
+Let $K_{width}, K_{height}$ be the kernel dimensions of a convolution, and let $C_{in}, C_{out}$ be the number of input and output channels. Then the number of weight parameters in a convolution layer is give by: $ \# params = K_{width} \cdot K_{height} \cdot C_{in} \cdot C_{out}$
+
+- In regular block each convolution has kernel $3 \times 3$, with $C_{in} = C_{out} = 256$ Therefore:
+
+$ \# params_{regular} = 2 \cdot (3 \cdot 3 \cdot 256 \cdot 256) = 1179648$
+
+- The bottleneck consists of: $1 \times 1$ convolution with $C_{in} = 64, C_{out} = 256$, after $3 \times 3$ convolution with $C_{in} = C_{out} = 64$, after $1 \times 1$ convolution with $C_{in} = 256, C_{out} = 64$.
+
+$ \# params_{bottleneck} = (1 \cdot 1 \cdot 256 \cdot 64) + (3 \cdot 3 \cdot 64 \cdot 64) + (1 \cdot 1 \cdot 64 \cdot 256) = 69632$
+
+Overall we get:
+
+$ \frac{\# params_{regular}}{\# params_{bottleneck}} = \frac{1179648}{69632} = 16.941$
+
+2) Number of floating point operations required to compute an output (qualitative assessment):
+
+Compute is proportional to: $ \# flops = H \cdot W \cdot K_{width} \cdot K_{height} \cdot C_{in} \cdot C_{out}$. Therefore:
+
+$ \frac{\# flops_{regular}}{\# flops_{bottleneck}} = \frac{H \cdot W \cdot 1179648}{H \cdot W \cdot 69632} = 16.941$
+
+3) Ability to combine the input: 
+
+(1) spatially (within feature maps)
+- Regular block: has two $3 \times 3$ convolutions, giving greater spatial processing depth (two spatial mixing steps).
+- Bottleneck block: has only one $3 \times 3$ convolution, so it has less spatial mixing depth per block.
+
+(2) across feature maps.
+- Regular block: also mixes channels, but this mixing happens within the $3 \times 3$ convolutions.
+- Bottleneck block: explicitly uses $1 \times 1$ convolutions to perform efficient channel mixing. 
 """
 
 
 part4_q2 = r"""
 **Your answer:**
 
+Given $M$ a $m \times n$ matrix with small entries meaning $ \forall i,j  ; |M_{i,j}| < 1 $.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+1) Given $y_1 = M \cdot x_1$, $\frac{\partial L}{\partial y_1}$, we can use the chain rule to derive:
 
+$\frac{\partial L}{\partial x_1} = \frac{\partial L}{\partial y_1} \frac{\partial y_1}{\partial x_1} = M \frac{\partial L}{\partial y_1}$.
+
+
+2) Given $ y_2 = x_2 + M \cdot x_2 $, $ \frac{\partial L}{\partial y_2} $, we can use the chain rule to derive:
+
+$ \frac{\partial L}{\partial x_2} = \frac{\partial L}{\partial y_2} \frac{\partial y_2}{\partial x_2} = (M + I) \frac{\partial L}{\partial y_2}$.
+
+3) Assume each layer is $x^{(t)} = M_t\,x^{(t-1)}$.
+
+By the chain rule,
+
+$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = M_t^{\top}\,\frac{\partial L}{\partial x^{(t)}}$.
+
+Applying this repeatedly over $k$ layers gives
+
+$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} M_t\right)\frac{\partial L}{\partial x^{(k)}}$.
+
+If the matrices $M_t$ have small entries, multiplying many of them leading to vanishing gradients.
+
+
+On the other hand with skip:
+
+$x^{(t)} = x^{(t-1)} + M_t\,x^{(t-1)} = (I+M_t)\,x^{(t-1)}$.
+
+Then
+
+$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = (I+M_t)\,\frac{\partial L}{\partial x^{(t)}}$.
+
+Over $k$ layers,
+
+$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} (I+M_t)\right)\frac{\partial L}{\partial x^{(k)}}$.
+
+When $M_t$ have small entries, $(I+M_t)$ is close to the identity, so the product is much less likely to shrink the gradient.
 """
 
 # ==============
