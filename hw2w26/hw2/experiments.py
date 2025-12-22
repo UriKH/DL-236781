@@ -130,10 +130,11 @@ def cnn_experiment(
     dl_test  = DataLoader(ds_test,  batch_size=bs_test,  shuffle=False)
     channels = list(itertools.chain.from_iterable([[k] * layers_per_block for k in filters_per_layer]))
     num_classes = 10
+    
     kw = dict(kw)
     kw["conv_params"] = {"kernel_size": 5, "padding": 2}
     kw["pooling_params"] = {"kernel_size": 2, "stride": 2}
-    kw['activation_type'] = 'lrelu'
+    #kw['activation_type'] = 'lrelu'
 
     base_model = model_cls(
         in_size=ds_train[0][0].shape,
@@ -143,7 +144,6 @@ def cnn_experiment(
         hidden_dims=hidden_dims,
         **kw
     )
-    print(base_model)
 
     model = ArgMaxClassifier(base_model).to(device)
 
