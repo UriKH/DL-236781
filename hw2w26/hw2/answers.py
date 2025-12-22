@@ -106,9 +106,9 @@ def part2_optim_hp():
     # ====== YOUR CODE: ======
     wstd = 0.12
     lr_vanilla = 0.0155
-    lr_momentum = 0.0015 #0.0019 # 0.0025 # 0.0015
+    lr_momentum = 0.0019 # 0.0025 # 0.0015
     lr_rmsprop = 0.0001255 #0.000125 #0.0001
-    reg = 0.001 #0.024
+    reg = 0.024
     # ========================
     return dict(
         wstd=wstd,
@@ -190,29 +190,29 @@ Differences of gradient descent (GD) and stochastic gradient descent (SGD):
 
 - Cost - GD goes through all N examples to compute one gradient while SGD computes the gradient w.r.t only one sample, so each step is much faster.
 
-(3) Noise - GD get deterministic path and the loss usually decreases smoothly while in SGD each gradient is noisy (since it is computed on different samples each epoch) and the randomness in the sampling gives different paths.
+- Noise - GD get deterministic path and the loss usually decreases smoothly while in SGD each gradient is noisy (since it is computed on different samples each epoch) and the randomness in the sampling gives different paths.
 
 2. Yes, momentum can be used with GD. Momentum can accelerate convergence by accumulating velocity in directions with consistent gradients often leading to faster and stable convergence. The main difference from SGD is that in GD momentum is not primarily “noise smoothing”.
 
 3.  A) Let the dataset be $\mathcal{D}=\{x_i\}_{i=1}^N$ and the loss be $\ell(\theta; x_i)$.
 
-$L(\theta)=\sum_{i=1}^N \ell(\theta;x_i)$
+$$L(\theta)=\sum_{i=1}^N \ell(\theta;x_i)$$
 
 hence its gradient is:
 
-$\nabla_\theta L(\theta)=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$
+$$\nabla_\theta L(\theta)=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$$
 
 Assume we partition the dataset into disjoint batches $B_1,\dots,B_K$ such that $B_j\cap B_k=\emptyset$ for $j\neq k$ and $\bigcup_{k=1}^K B_k=\mathcal{D}$.
 The batch losses:
 
-$L_k(\theta)=\sum_{i\in B_k}\ell(\theta;x_i)$
+$$L_k(\theta)=\sum_{i\in B_k}\ell(\theta;x_i)$$
 
 Then, by linearity:
 
-$\nabla_\theta\Big(\sum_{k=1}^K L_k(\theta)\Big)
+$$\nabla_\theta\Big(\sum_{k=1}^K L_k(\theta)\Big)
 =\sum_{k=1}^K \nabla_\theta L_k(\theta)
 =\sum_{k=1}^K \sum_{i\in B_k} \nabla_\theta \ell(\theta;x_i)
-=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$
+=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$$
 
 Therefore, a backward pass on the sum of losses over all disjoint batches is equivalent to GD.
 
@@ -372,21 +372,21 @@ Let $K_{width}, K_{height}$ be the kernel dimensions of a convolution, and let $
 
 - In regular block each convolution has kernel $3 \times 3$, with $C_{in} = C_{out} = 256$ Therefore:
 
-$ \# params_{regular} = 2 \cdot (3 \cdot 3 \cdot 256 \cdot 256) = 1179648$
+$$ \# params_{regular} = 2 \cdot (3 \cdot 3 \cdot 256 \cdot 256) = 1179648$$
 
 - The bottleneck consists of: $1 \times 1$ convolution with $C_{in} = 64, C_{out} = 256$, after $3 \times 3$ convolution with $C_{in} = C_{out} = 64$, after $1 \times 1$ convolution with $C_{in} = 256, C_{out} = 64$.
 
-$ \# params_{bottleneck} = (1 \cdot 1 \cdot 256 \cdot 64) + (3 \cdot 3 \cdot 64 \cdot 64) + (1 \cdot 1 \cdot 64 \cdot 256) = 69632$
+$$ \# params_{bottleneck} = (1 \cdot 1 \cdot 256 \cdot 64) + (3 \cdot 3 \cdot 64 \cdot 64) + (1 \cdot 1 \cdot 64 \cdot 256) = 69632$$
 
 Overall we get:
 
-$ \frac{\# params_{regular}}{\# params_{bottleneck}} = \frac{1179648}{69632} = 16.941$
+$$ \frac{\# params_{regular}}{\# params_{bottleneck}} = \frac{1179648}{69632} = 16.941$$
 
 2) Number of floating point operations required to compute an output (qualitative assessment):
 
 Compute is proportional to: $ \# flops = H \cdot W \cdot K_{width} \cdot K_{height} \cdot C_{in} \cdot C_{out}$. Therefore:
 
-$ \frac{\# flops_{regular}}{\# flops_{bottleneck}} = \frac{H \cdot W \cdot 1179648}{H \cdot W \cdot 69632} = 16.941$
+$$ \frac{\# flops_{regular}}{\# flops_{bottleneck}} = \frac{H \cdot W \cdot 1179648}{H \cdot W \cdot 69632} = 16.941$$
 
 3) Ability to combine the input: 
 
@@ -407,37 +407,35 @@ Given $M$ a $m \times n$ matrix with small entries meaning $ \forall i,j  ; |M_{
 
 1) Given $y_1 = M \cdot x_1$, $\frac{\partial L}{\partial y_1}$, we can use the chain rule to derive:
 
-$\frac{\partial L}{\partial x_1} = \frac{\partial L}{\partial y_1} \frac{\partial y_1}{\partial x_1} = M \frac{\partial L}{\partial y_1}$.
+$$\frac{\partial L}{\partial x_1} = \frac{\partial L}{\partial y_1} \frac{\partial y_1}{\partial x_1} = M \frac{\partial L}{\partial y_1}$$.
 
 
 2) Given $ y_2 = x_2 + M \cdot x_2 $, $ \frac{\partial L}{\partial y_2} $, we can use the chain rule to derive:
 
-$ \frac{\partial L}{\partial x_2} = \frac{\partial L}{\partial y_2} \frac{\partial y_2}{\partial x_2} = (M + I) \frac{\partial L}{\partial y_2}$.
+$$ \frac{\partial L}{\partial x_2} = \frac{\partial L}{\partial y_2} \frac{\partial y_2}{\partial x_2} = (M + I) \frac{\partial L}{\partial y_2}$$.
 
 3) Assume each layer is $x^{(t)} = M_t\,x^{(t-1)}$.
 
 By the chain rule,
 
-$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = M_t^{\top}\,\frac{\partial L}{\partial x^{(t)}}$.
+$$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = M_t^{\top}\,\frac{\partial L}{\partial x^{(t)}}$$.
 
 Applying this repeatedly over $k$ layers gives
 
-$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} M_t\right)\frac{\partial L}{\partial x^{(k)}}$.
+$$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} M_t\right)\frac{\partial L}{\partial x^{(k)}}$$.
 
 If the matrices $M_t$ have small entries, multiplying many of them leading to vanishing gradients.
 
 
 On the other hand with skip:
 
-$x^{(t)} = x^{(t-1)} + M_t\,x^{(t-1)} = (I+M_t)\,x^{(t-1)}$.
+$$x^{(t)} = x^{(t-1)} + M_t\,x^{(t-1)} = (I+M_t)\,x^{(t-1)}$$.
 
-Then
-
-$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = (I+M_t)\,\frac{\partial L}{\partial x^{(t)}}$.
+$$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = (I+M_t)\,\frac{\partial L}{\partial x^{(t)}}$$.
 
 Over $k$ layers,
 
-$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} (I+M_t)\right)\frac{\partial L}{\partial x^{(k)}}$.
+$$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} (I+M_t)\right)\frac{\partial L}{\partial x^{(k)}}$$.
 
 When $M_t$ have small entries, $(I+M_t)$ is close to the identity, so the product is much less likely to shrink the gradient.
 """
@@ -449,16 +447,16 @@ When $M_t$ have small entries, $(I+M_t)$ is close to the identity, so the produc
 
 
 part5_q1 = r"""
+Explain the effect of depth on the accuracy. What depth produces the best results and why do you think that's the case?
+Were there values of L for which the network wasn't trainable? what causes this? Suggest two things which may be done to resolve it at least partially.
+
 **Your answer:**
+As seen in the results of the train and test, we can see the following phenomena:
+1. The shallow models L=2,4: The models learned successfully but it seems that L=2 model was two shallow and didn't reach test and train results as good as L=4.
+2. The deeper models couldn't train due to................
 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+To resolve this issue, we could have used residuals as a way to prevent vanishing gradients (de facto allowing the model to remember the input sample in each layer).
 """
 
 part5_q2 = r"""
