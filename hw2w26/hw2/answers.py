@@ -13,48 +13,50 @@ part1_q1 = r"""
 
 A. X has shape (64, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{X}}$ describes, for each output element, how it changes with respect to each input element:
 
-$(\pderiv{\mat{Y}}{\mat{X}}){n,o,m,i} = \pderiv{\mat{Y}{n,o}}{\mat{X}_{m,i}}$
+$$\Big(\pderiv{\mat{Y}}{\mat{X}}\Big)_{n,o,m,i} = \pderiv{\mat{Y}_{n,o}}{\mat{X}_{m,i}}$$
 
 Therefore, the Jacobian tensor will have shape (64, 512, 64, 1024).
 
-B. If we view the Jacobian $\pderiv{\mat{Y}}{\mat{X}}$ as a 2D block matrix, we will get $N \times N$ blocks of (out_features × in_features) such that the block (i,j) is $\pderiv{\mat{Y}_i}{\mat{X}_j}$. For a linear layer $Y=XW^T$, each output $\mat{Y}_k$ depends only on its own input sample $\mat{X}_k$ we get:
-\begin{cases}
-    \pderiv{\mat{Y}_i}{\mat{X}_j}=W & i = j\\
-    \pderiv{\mat{Y}_i}{\mat{X}_j}=0 & i \ne j
-\end{cases}
+B. If we view the Jacobian $\pderiv{\mat{Y}}{\mat{X}}$ as a 2D block matrix, we will get $N \times N$ blocks of (out_features × in_features) such that the block (i,j) is the derivative of the i-th output (i-th row of Y) with respect to j-th input sample (j-th row of X). For a linear layer $Y=XW^T$, each output depends only on its own input sample. Therefore we get: 
+$$
+    \Big(\pderiv{\mat{Y}}{\mat{X}}\Big)_{i,j} = \begin{cases}
+            W & i = j \\
+            0 & i \ne j
+    \end{cases}
+$$
 The structure is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero.
 
-C. Yes, apart from VJP we can use the Jacobian’s block structure. As we say previously, $\pderiv{\mat{Y}_i}{\mat{X}_j}$ is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero. Therefore, there is no need to materialize the full Jacobian of shape, we can just represent it by storing only $W$.
+C. Yes, apart from VJP we can use the Jacobian’s block structure. As we say previously, $\pderiv{\mat{Y}}{\mat{X}}$ is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero. Therefore, there is no need to materialize the full Jacobian, we can just represent it by storing only $W$. The new tensor shape will be (in_features × out_features).
 
-D. Given the gradient of the output w.r.t. some downstream scalar loss $L$, $\delta\mat{Y} := \pderiv{L}{\mat{Y}}$ we can use the chain rule to calculate the downstream gradient w.r.t. the input ($\delta\mat{X}$) without materializing the Jacobian:
+D. Given the gradient of the output w.r.t. some downstream scalar loss $L$, $\delta\mat{Y} := \pderiv{L}{\mat{Y}}$ we can use the chain rule to calculate the downstream gradient w.r.t. the input ($\delta\mat{X}$) without materializing the Jacobian. Denote the $k$-th example by:
 
-$\delta \mat{X}{n,i} = \pderiv{L}{\mat{X}{n,i}} = \sum_{o=1}^{O} \pderiv{L}{\mat{Y}{n,o}} \, \pderiv{\mat{Y}{n,o}}{\mat{X}_{n,i}}$
+$$
+X_k \in \mathbb{R}^{1 \times in\_features}, \qquad
+Y_k \in \mathbb{R}^{1 \times out\_features}, \qquad
+Y_k = X_k W^\top
+$$
 
-$\mat{Y}{n,o} = \sum{j=1}^J \mat{X}{n,j}\mat{W}{j,o}^T$
+Therefore:
 
-Therefore, 
+$$ \delta X_k
+:= \frac{\partial L}{\partial X_k}
+= \frac{\partial L}{\partial Y_k}\,\frac{\partial Y_k}{\partial X_k} = \delta Y_k W
+$$
 
-$\delta \mat{X}{n,i} = \sum{o=1}^{O} \delta \mat{Y}{n,o}\mat{W}{j,o}^T = \sum_{o=1}^{O} \delta \mat{Y}{n,o}\mat{W}{o,j}$
+Stacking all examples gives:
 
-In matrix form for the whole batch:
-
-$\delta \mat{X} = \mat{Y}\mat{W}$
+$$ \boxed{
+\delta X := \frac{\partial L}{\partial X} = \delta Y\, W
+} $$
 
 E. W has shape (512, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{W}}$ describes, for each output element, how it changes with respect to each weight element:
 
-$(\pderiv{\mat{Y}}{\mat{W}}){n,o,p,i} = \pderiv{\mat{Y}{n,o}}{\mat{W}_{p,i}}$
+$$\Big(\pderiv{\mat{Y}}{\mat{W}}\Big)_{n,o,p,i} = \pderiv{\mat{Y}_{n,o}}{\mat{W}_{p,i}}$$
 
-Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024). If we were to make it into a block matrix, each block has shape (64, 1024).
-
-
-
-
-If we were to make it into a block matrix, each block contains all derivatives across the remaining indices $(n,i)$:
-
-$\text{block}(o,p) = \left[\pderiv{Y_{n,o}}{W_{p,i}}\right]{n=1}^{64}{}{i=1}^{1024}.$
-
-Therefore, each block has shape $(64,1024)$.
-
+Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024).  If we view the Jacobian $\pderiv{\mat{Y}}{\mat{W}}$ as a 2D block matrix, we will get
+$N \times \text{out\_features}$ blocks of size
+$(\text{out\_features} \times \text{in\_features})$ such that the block $(i,j)$ is the derivative
+of the $i$-th output sample with respect to the $j$-th row of $W$. 
 """
 
 part1_q2 = r"""
@@ -62,10 +64,15 @@ part1_q2 = r"""
 
 Yes, second order derivatives (Hessian) can be helpful for optimization (but are not commonly used as it is quite expensive to compute unlike the gradient).
 
-When second order information is useful when the condition number is high.
+The second order information is useful when the condition number is high because it tells us how the slope changes in different directions.
 If the condition number is high this means that in some directions the optimization landscape is much more steep. 
 
-This means we would like to take very big learning rate in order to overcome the low steepness in one direction but a very small learning rate to overcome the high steepness in the other direction. In order to solve this contradiction, we can use Newton's method which utilizes the Hessian matrix in order to "normalize" gradient step in this case.
+This means we would like to take very big learning rate in order to overcome the low steepness in one direction but a very small learning rate to overcome the high steepness in the other direction. 
+Second order derivatives address this by rescaling the update using curvature. For example, as we learned in the lectures Newton’s method uses:
+
+$$ \theta_{t+1} = \theta_t - H^{-1} \nabla L (\theta_t) $$
+
+which effectively normalizes the step size differently along different directions, often leading to much faster convergence.
 """
 
 
@@ -151,19 +158,22 @@ $$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - {\vectr{y}} \log(\hat{\vec{y}})$
 
 Epoch 1 – 100% accuracy:
 
-$p_1 = (0.49, 0.51)$
+$$p_1 = (0.49, 0.51)$$
 
-$p_2 = (0.49, 0.51)$
+$$p_2 = (0.49, 0.51)$$
 
-$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.51, 0.51) = -log(0.51) = 0.673$
+$$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.51, 0.51) = -log(0.51) = 0.673$$
 
 Epoch 2 – 50% accuracy:
 
-$p_1 = (0.01, 0.99)$
+$$p_1 = (0.01, 0.99)$$
 
-$p_2 = (0.51, 0.49)$
+$$p_2 = (0.51, 0.49)$$
 
-$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.49, 0.99) = -log(0.99) = 0.01$
+$$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.49, 0.99) = -log(0.99) = 0.01$$
+
+
+In the first epoch both classifications are correct but it is possible that the gradient is big enough for the first sample and much smaller for the second one such that the updated model will enforce correct classification on the first sample on the count of the second.
 """
 
 part2_q3 = r"""
