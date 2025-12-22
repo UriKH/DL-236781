@@ -88,7 +88,7 @@ class Trainer(abc.ABC):
             self.model.train()
             train_result = self.train_epoch(dl_train, **kw)
 
-            self.model.eval()
+            # self.model.eval()
             test_result  = self.test_epoch(dl_test,  **kw)
             
             train_loss.append(sum(train_result.losses) / len(train_result.losses))
