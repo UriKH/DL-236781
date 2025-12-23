@@ -525,14 +525,29 @@ Overall, the best configuration in this experiment is K=\[64,128\] with L=3, ach
 part5_q4 = r"""
 **Your answer:**
 
+In experiment 1.4 we switched from CNN model type to ResNet and tested deeper configurations. 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+The first plot set compares L=8, 16, 32 for K=32. We can see that, L=8 and L=16 are trainable: training loss keeps dropping and training accuracy climbs to ~80-90%, while test accuracy rises to the ~60. 
+This is an important difference from experiment 1.1, where deeper CNNs (L $\ge$ 8) collapsed to ~10% accuracy. 
+However, L=32 performs much worse: it learns slowly, reaches only ~50% train and test accuracies. 
+This suggests that ResNet arcitecture helps mitigate vanishing gradients and enables training of deeper network.
 
+The second plot set compares L=2, 4, 8 for K=\[64,128,256\]. 
+Here, L=2 and L=4 are trainable, and L=4 is best on test (around ~70–71%) while L=2 reaches a lower test accuracy and shows stronger signs of overfitting
+We figure that the surprising part is that L=8 again collapses to ~10% (not trainable), even though this is a ResNet.
+This suggests that skip connections help a lot, 
+but they don’t guarantee stability when the model is very deep and wide (many parameters, harder optimization).
+
+Compared to experiment 1.1, the main diference is trainability at higher depth. 
+In 1.1, depth L=8 and L=16 caused collapse, while in 1.4 the ResNet successfully trains them and reaches reasonable test accuracy. 
+This supports the idea that residual connections can make deeper networks easier to optimize, even if the final accuracy is still in a similar range.
+
+Compared to experiment 1.3, a similar pattern appears. In 1.3, increasing capacity and depth caused training to collapse earlier 
+(L=4), while in 1.4 the ResNet can still train L=4 even with a wider configuration (K=\[64,128,256\]). 
+However, pushing depth further to L=8 with the wide ResNet still fails.
+
+Overall, experiment 1.4 suggests that ResNets improve trainability, allowing deeper models to learn where CNN fails.
+Note that the training of experiments 1.1-1.3 where trained on very similar hyperparameters 1.4 was trained on different hyperparameters so the results are not fully compareable.
 """
 
 
@@ -583,15 +598,16 @@ part6_q3 = r"""
 **Your answer:**
 
 We chose three images:
-1. Blurry image of people walking: It seems that the model detects all of of the people quite well altough many of them are blurry due to the movement. This is a good case in which the model classified correctly despite the blurr.
-Note that we can find imperfections like double classification of people (in the far right of the image) or that the model missed the handbag held by the man with the green shirt.
-2. A set of chiuaua images compared to cupcakes (we intentionally chose an image containing many examples to demonstrate the issue but we could have off course cut only one bad example :) ). 
+1. Blurry image of a dog: The model did detect the dog but also detected his tongue as a freesbe. 
+This is probably due to the fact that the image is blurry and thus the model was unable to extract the exact features.
+2. A busy street: In this image we can see that although most of the faces are in high resolution and not blurred at all, due to the fact that a part of the face is occluded by another person, the model failed to classify the part of the person with only some of their face appearing.
+Noteably the people in the left part of the image which are not classified as anything.
+This demonstrates the occlusion pitfall in object detection.
+3. A set of chiuaua images compared to cupcakes (we intentionally chose an image containing many examples to demonstrate the issue but we could have off course cut only one bad example :) ). 
 In this image we can see that the model, in some contexts, classified cupckaes as dogs (clear example in the top right) or as a teddy bear apart from one case (bottom left).
 This is an example of model bias - e.g. the model probably learned that teddy bears are yellow-ish and could be difformed in some ways due to their fluffy nature :).
 Thus the model miss-classified the cakes altough it did know what a cake is (there is a correct classification) but was clearlly biased towards the teddy bear (or chiuaua in some cases).
-3. A busy street: In this image we can see that although most of the faces are in high resolution and not blurred at all, due to the fact that a part of the face is occluded by another person, the model failed to classify the part of the person with only some of their face appearing.
-Noteably the people in the left part of the image which are not classified as anything.
-This demonstrates the occlusion pitfall in object detection.
+
 
 In general it seems that the model preformed quite well only on the first and last images as it failed spectacularly on the second one. 
 """
@@ -599,12 +615,12 @@ In general it seems that the model preformed quite well only on the first and la
 part6_bonus = r"""
 **Your answer:**
 
+1. For the firs image of the blurry dog we used image sharpenin kernel in order to manipulate the image so that the model will recognize features better.
+As we can see the model no longer detected the tongue as a freesbe and only detected the dog correctly.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+2. For the second image of the busy street we tried using the fact that YOLO uses the sliding window approach and cut the parts it didn't work well on and check those seperately.
+This approche worked quite well as we can see the model was able to detect most of the people it didn't detect in the original image.
+
+3. For the third image of the chiuaua vs cupcakes we tried to use the samne approch as in the second image. It seems that the model was able to detect most of the cupcakes in the image even though it misclassified them as donuts, which is better than classifying them as dogs or teddy bears.
 
 """
