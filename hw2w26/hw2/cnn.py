@@ -215,125 +215,6 @@ class InceptionResNetBlock(nn.Module):
         
         x = nn.LeakyReLU()(self.bn(x))
         return x
-        
-class YourCNN(ResNet):    
-    def __init__(
-        self,
-        in_size,
-        out_classes: int,
-        channels: Sequence[int],
-        pool_every: int,
-        hidden_dims: Sequence[int],
-        conv_params: dict = {},
-        activation_type: str = "relu",
-        activation_params: dict = {},
-        pooling_type: str = "max",
-        pooling_params: dict = {},
-        **kw
-    ):
-    #     self.batchnorm = True
-    #     self.dropout = 0.2
-    #     self.dropout_stem = 0.1
-    #     self.dropout_mlp = 0.1
-    #     self.stem_width1 = 8
-    #     self.stem_width2 = 16
-        batchnorm = kw.get('batchnorm', True)
-        dropout = kw.get('dropout', 0.25)
-        
-        super().__init__(
-            in_size=in_size,
-            out_classes=out_classes,
-            channels=channels,
-            pool_every=pool_every,
-            hidden_dims=hidden_dims,
-            batchnorm=batchnorm,
-            dropout=dropout,
-            bottleneck=False,
-            conv_params=dict(kernel_size=3, stride=1, padding=1),
-            activation_type='relu',
-            activation_params=dict(),
-            pooling_type='max',
-            pooling_params=dict(kernel_size=2),
-        )
-        
-    #     in_dim = self._n_features()
-    #     dims = self.hidden_dims + [out_classes]
-    #     nonlins = [activation_type] * len(self.hidden_dims) + [nn.Identity()]
-        
-    #     layers = []
-    #     feats = [in_dim] + list(dims)
-    #     for i in range(len(feats) - 1):
-    #         layers += [nn.Linear(feats[i], feats[i + 1])]
-    #         nonlin = nonlins[i]
-    #         if isinstance(nonlin, str):
-    #             layers += [ ACTIVATIONS[nonlin](**ACTIVATION_DEFAULT_KWARGS[nonlin]) ]
-    #         else:
-    #             layers += [ nonlin ]
-    #         layers += [nn.Dropout2d(self.dropout_mlp)]
-
-    #     self.mlp = nn.Sequential(*layers)
-    #     with torch.no_grad():
-    #         self.feature_extractor.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, "weight") else None)
-    #         self.mlp.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, 'weight') else None)
-
-    # def _make_feature_extractor(self):
-    #     in_channels, _, _ = tuple(self.in_size)
-
-    #     layers = []
-    #     block_in_channels = in_channels
-    #     conv_channels = []
-    #     depth = 0
-    #     prob_delta = 0.0
-        
-    #     layers.append(
-    #         nn.Sequential(
-    #             BasicConv2d(block_in_channels, self.stem_width1, kernel_size=5, padding='same', activation='lrelu'),
-    #             nn.Dropout2d(self.dropout_stem),
-    #             BasicConv2d(self.stem_width1, self.stem_width2, kernel_size=5, padding='same', activation='lrelu'),
-    #             nn.Dropout2d(self.dropout_stem)
-    #         )
-    #     )
-    #     block_in_channels = self.stem_width2
-
-    #     for i, c in enumerate(self.channels):
-    #         conv_channels.append(c)
-            
-    #         c_frac = int(c / 4)
-
-    #         layers.append(
-    #             InceptionResNetBlock(
-    #                 block_in_channels, 
-    #                 [
-    #                     [(1, c_frac), (3, c_frac), (3, c_frac)],
-    #                     [(1, c_frac), (3, c_frac)],
-    #                     [(1, c_frac)]
-    #                 ],
-    #                 block_in_channels,
-    #                 pool_branch='avg',
-    #                 activation='lrelu'
-    #             )
-    #         )
-    #         layers.append(nn.Dropout2d(self.dropout))
-    #         layers.append(
-    #             ResidualBlock(
-    #                 block_in_channels, [c], [5], True, self.dropout, 'lrelu'  
-    #             )
-    #         )
-    #         #layers.append(
-    #         #    BasicConv2d(
-    #         #        block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
-    #         #    )
-    #         #)
-    #         #layers.append(nn.Dropout2d(self.dropout))
-        
-    #         block_in_channels = conv_channels[-1]
-    #         conv_channels = []
-    #         depth += 1
-
-    #         if (i + 1) % self.pool_every == 0:
-    #             layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
-    #     seq = nn.Sequential(*layers)
-    #     return seq
 
 
 class ResidualBlock(nn.Module):
@@ -561,3 +442,122 @@ class ResNet(CNN):
 import torch
 import torch.nn as nn
 import itertools as it
+
+class YourCNN(ResNet):    
+    def __init__(
+        self,
+        in_size,
+        out_classes: int,
+        channels: Sequence[int],
+        pool_every: int,
+        hidden_dims: Sequence[int],
+        conv_params: dict = {},
+        activation_type: str = "relu",
+        activation_params: dict = {},
+        pooling_type: str = "max",
+        pooling_params: dict = {},
+        **kw
+    ):
+    #     self.batchnorm = True
+    #     self.dropout = 0.2
+    #     self.dropout_stem = 0.1
+    #     self.dropout_mlp = 0.1
+    #     self.stem_width1 = 8
+    #     self.stem_width2 = 16
+        batchnorm = kw.get('batchnorm', True)
+        dropout = kw.get('dropout', 0.25)
+        
+        super().__init__(
+            in_size=in_size,
+            out_classes=out_classes,
+            channels=channels,
+            pool_every=pool_every,
+            hidden_dims=hidden_dims,
+            batchnorm=batchnorm,
+            dropout=dropout,
+            bottleneck=False,
+            conv_params=dict(kernel_size=3, stride=1, padding=1),
+            activation_type='relu',
+            activation_params=dict(),
+            pooling_type='max',
+            pooling_params=dict(kernel_size=2),
+        )
+        
+    #     in_dim = self._n_features()
+    #     dims = self.hidden_dims + [out_classes]
+    #     nonlins = [activation_type] * len(self.hidden_dims) + [nn.Identity()]
+        
+    #     layers = []
+    #     feats = [in_dim] + list(dims)
+    #     for i in range(len(feats) - 1):
+    #         layers += [nn.Linear(feats[i], feats[i + 1])]
+    #         nonlin = nonlins[i]
+    #         if isinstance(nonlin, str):
+    #             layers += [ ACTIVATIONS[nonlin](**ACTIVATION_DEFAULT_KWARGS[nonlin]) ]
+    #         else:
+    #             layers += [ nonlin ]
+    #         layers += [nn.Dropout2d(self.dropout_mlp)]
+
+    #     self.mlp = nn.Sequential(*layers)
+    #     with torch.no_grad():
+    #         self.feature_extractor.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, "weight") else None)
+    #         self.mlp.apply(lambda m: torch.nn.init.normal_(m.weight, std=0.1) if hasattr(m, 'weight') else None)
+
+    # def _make_feature_extractor(self):
+    #     in_channels, _, _ = tuple(self.in_size)
+
+    #     layers = []
+    #     block_in_channels = in_channels
+    #     conv_channels = []
+    #     depth = 0
+    #     prob_delta = 0.0
+        
+    #     layers.append(
+    #         nn.Sequential(
+    #             BasicConv2d(block_in_channels, self.stem_width1, kernel_size=5, padding='same', activation='lrelu'),
+    #             nn.Dropout2d(self.dropout_stem),
+    #             BasicConv2d(self.stem_width1, self.stem_width2, kernel_size=5, padding='same', activation='lrelu'),
+    #             nn.Dropout2d(self.dropout_stem)
+    #         )
+    #     )
+    #     block_in_channels = self.stem_width2
+
+    #     for i, c in enumerate(self.channels):
+    #         conv_channels.append(c)
+            
+    #         c_frac = int(c / 4)
+
+    #         layers.append(
+    #             InceptionResNetBlock(
+    #                 block_in_channels, 
+    #                 [
+    #                     [(1, c_frac), (3, c_frac), (3, c_frac)],
+    #                     [(1, c_frac), (3, c_frac)],
+    #                     [(1, c_frac)]
+    #                 ],
+    #                 block_in_channels,
+    #                 pool_branch='avg',
+    #                 activation='lrelu'
+    #             )
+    #         )
+    #         layers.append(nn.Dropout2d(self.dropout))
+    #         layers.append(
+    #             ResidualBlock(
+    #                 block_in_channels, [c], [5], True, self.dropout, 'lrelu'  
+    #             )
+    #         )
+    #         #layers.append(
+    #         #    BasicConv2d(
+    #         #        block_in_channels, c, kernel_size=5, activation='lrelu', padding='same'
+    #         #    )
+    #         #)
+    #         #layers.append(nn.Dropout2d(self.dropout))
+        
+    #         block_in_channels = conv_channels[-1]
+    #         conv_channels = []
+    #         depth += 1
+
+    #         if (i + 1) % self.pool_every == 0:
+    #             layers.append(POOLINGS[self.pooling_type](kernel_size=2, stride=2))
+    #     seq = nn.Sequential(*layers)
+    #     return seq
