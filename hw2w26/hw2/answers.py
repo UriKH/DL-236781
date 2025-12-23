@@ -333,7 +333,9 @@ As depth increases, the model can build features in stages: early layers learn s
 
 Even with the same total parameters, the first model learns a simpler separator that looks like underfitting to the curved structure, while the second model can build multi step features, which tends to represent curved boundaries more efficiently.
 
-4) Selecting the threshold shifts the decision boundary without changing the learned features, trading off false positives vs false negatives. It improved the results on the test set because the data overlap region might be shaped so that moving the boundary slightly reduces a lot of errors on one side, while adding only a few on the other, leading to a “sweet spot” threshold.
+4) Selecting the threshold shifts the decision boundary without changing the learned features, trading off false positives vs false negatives. 
+By default, the boundary is at 0.5 probability which can cause a lot of misclassifications, but moving it can better align with the data distribution. 
+In our case, it did improve the results on the test set because the data overlap region might be shaped so that moving the boundary slightly reduces a lot of errors on one side, while adding only a few on the other, leading to a “sweet spot” threshold.
 
 """ 
 
@@ -447,41 +449,76 @@ When $M_t$ have small entries, $(I+M_t)$ is close to the identity, so the produc
 
 
 part5_q1 = r"""
-Explain the effect of depth on the accuracy. What depth produces the best results and why do you think that's the case?
-Were there values of L for which the network wasn't trainable? what causes this? Suggest two things which may be done to resolve it at least partially.
-
 **Your answer:**
+
+As L increases from 2 to 4, both train and test accuracy improve. This shows that adding depth helps the model learn more expressive features. 
+However, when L increases further to 8 or 16, accuracy collapses to ~10% and the loss barely improves, meaning too deep networks fail to train.
+
 As seen in the results of the train and test, we can see the following phenomena:
-1. The shallow models L=2,4: The models learned successfully but it seems that L=2 model was two shallow and didn't reach test and train results as good as L=4.
-2. The deeper models couldn't train due to................
 
+1. The shallow models L=2,4: The models learned successfully. In both K=32 and K=64 experiments, the networks with L=2 and L=4 show a steady decrease in training loss and a clear increase in training accuracy. 
+However, it seems that L=2 model was two shallow and didn't reach test and train results as good as L=4. 
+This makes sense because with fewer layers, the model is less capable of learning complex features from the data.
 
-To resolve this issue, we could have used residuals as a way to prevent vanishing gradients (de facto allowing the model to remember the input sample in each layer).
+2. The deeper models L=8,16: The models couldn't train, both training and test accuracy stay around ~10%, which is approximately random guessing for a 10-class problem. 
+
+The best results come from L=4 (in both K=32 and K=64 runs). L=4 is a sweet spot because it is deep enough to learn complex features, but not so deep that training becomes unstable.
+
+There were values of L for which the network wasn't trainable, for L=8,16. The main cause is vanishing gradients. 
+As the network depth increases, gradients can become very small during backpropagation, making it difficult for the weights in earlier layers to update.
+
+To resolve this issue we could have used:
+
+1) Residuals - a way to prevent vanishing gradients (de facto allowing the model to remember the input sample in each layer).
+
+2) Normalization (e.g., BatchNorm) after convolutional layers - this stabilizes activations and gradients, usually enabling convergence in deeper models.
 """
 
 part5_q2 = r"""
 **Your answer:**
 
+In experiment 1.2 we kept the same training hyperparameters as in experiment 1.1 
+and focused on the effect of width, by changing the number of filters per layer (K) while keeping the depth (L) fixed.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+As seen in the results of the train and test, we can see the following phenomena:
+
+1. For L=2, all three (K=32,64,128) trainable, both train and test loss decreased smoothly and accuracy increased steadily. 
+However, the gap between different values of K was relatively small, which suggests that when the network is shallow, increasing width gives only limited benefit.
+
+2. For L=4, increasing K had a much clearer positive effect. All models trained well, but the widest network (K=128) reached the highest test accuracy.
+This indicates that if the network has enough depth to learn meaningful features, adding more channels helps because each layer can 
+capture more complex patterns, which improves generalization.
+
+3. For L=8, the network was not trainable for any value of K and the training and test accuracy stayed around 10%. 
+This again points to vanishing gradients as the main issue with deep networks.
+
+The best results come from K = 128, which reaches the highest test accuracy (about 72–73%) among the trainable settings.
+
+Comparing experiment 1.2 to experiment 1.1, the key difference is that depth had a much stronger and more critical effect than width,
+we also can see that when we changed K (for models that were trainable) the gains were moderate. For overlaping experiments between 1.1 and 1.2, results were similar.
+For the failing deep case (L=8), the same remedies suggested in experiment 1.1 would apply here as well, 
+such as adding residuals or normalization layers, which mitigate vanishing gradiens and therefore make training deep architectures much more feasible.
 
 """
 
 part5_q3 = r"""
 **Your answer:**
 
+In experiment 1.3 we examined the effect of the number of convolutional filters in each layer.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+The results show that L=2 and L=3 are trainable with this wide configuration. 
+In both settings, we observe signs of overfitting in the later stages of training. 
+While the training loss continues to decrease and the training accuracy keeps rising, 
+the test loss reaches a minimum and then starts to increase, and the test accuracy stops improving.
+The overfitting behavior is more pronounced for L=2.
+L=3 generalizes better overall, which suggests that the additional depth helps learn more robust representations even though 
+some overfitting still appears.
+
+In contrast, L=4 is not trainable in this setup: both training and test accuracy remain around 10%.
+This failure indicates that with more depth (and already large width), gradientscan become poorly scaled, making it hard for the model to learn.
+As a result, the model stays close to its random guessing performance.
+
+Overall, the best configuration in this experiment is K=\[64,128\] with L=3, achieving the highest and most stable test accuracy among the trainable models.
 
 """
 
