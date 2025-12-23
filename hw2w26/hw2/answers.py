@@ -13,48 +13,50 @@ part1_q1 = r"""
 
 A. X has shape (64, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{X}}$ describes, for each output element, how it changes with respect to each input element:
 
-$(\pderiv{\mat{Y}}{\mat{X}}){n,o,m,i} = \pderiv{\mat{Y}{n,o}}{\mat{X}_{m,i}}$
+$$\Big(\pderiv{\mat{Y}}{\mat{X}}\Big)_{n,o,m,i} = \pderiv{\mat{Y}_{n,o}}{\mat{X}_{m,i}}$$
 
 Therefore, the Jacobian tensor will have shape (64, 512, 64, 1024).
 
-B. If we view the Jacobian $\pderiv{\mat{Y}}{\mat{X}}$ as a 2D block matrix, we will get $N \times N$ blocks of (out_features × in_features) such that the block (i,j) is $\pderiv{\mat{Y}_i}{\mat{X}_j}$. For a linear layer $Y=XW^T$, each output $\mat{Y}_k$ depends only on its own input sample $\mat{X}_k$ we get:
-\begin{cases}
-    \pderiv{\mat{Y}_i}{\mat{X}_j}=W & i = j\\
-    \pderiv{\mat{Y}_i}{\mat{X}_j}=0 & i \ne j
-\end{cases}
+B. If we view the Jacobian $\pderiv{\mat{Y}}{\mat{X}}$ as a 2D block matrix, we will get $N \times N$ blocks of (out_features × in_features) such that the block (i,j) is the derivative of the i-th output (i-th row of Y) with respect to j-th input sample (j-th row of X). For a linear layer $Y=XW^T$, each output depends only on its own input sample. Therefore we get: 
+$$
+    \Big(\pderiv{\mat{Y}}{\mat{X}}\Big)_{i,j} = \begin{cases}
+            W & i = j \\
+            0 & i \ne j
+    \end{cases}
+$$
 The structure is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero.
 
-C. Yes, apart from VJP we can use the Jacobian’s block structure. As we say previously, $\pderiv{\mat{Y}_i}{\mat{X}_j}$ is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero. Therefore, there is no need to materialize the full Jacobian of shape, we can just represent it by storing only $W$.
+C. Yes, apart from VJP we can use the Jacobian’s block structure. As we say previously, $\pderiv{\mat{Y}}{\mat{X}}$ is a block - diagonal matrix with N diagonal blocks, equal to $W$ and all other entries are zero. Therefore, there is no need to materialize the full Jacobian, we can just represent it by storing only $W$. The new tensor shape will be (in_features × out_features).
 
-D. Given the gradient of the output w.r.t. some downstream scalar loss $L$, $\delta\mat{Y} := \pderiv{L}{\mat{Y}}$ we can use the chain rule to calculate the downstream gradient w.r.t. the input ($\delta\mat{X}$) without materializing the Jacobian:
+D. Given the gradient of the output w.r.t. some downstream scalar loss $L$, $\delta\mat{Y} := \pderiv{L}{\mat{Y}}$ we can use the chain rule to calculate the downstream gradient w.r.t. the input ($\delta\mat{X}$) without materializing the Jacobian. Denote the $k$-th example by:
 
-$\delta \mat{X}{n,i} = \pderiv{L}{\mat{X}{n,i}} = \sum_{o=1}^{O} \pderiv{L}{\mat{Y}{n,o}} \, \pderiv{\mat{Y}{n,o}}{\mat{X}_{n,i}}$
+$$
+X_k \in \mathbb{R}^{1 \times in\_features}, \qquad
+Y_k \in \mathbb{R}^{1 \times out\_features}, \qquad
+Y_k = X_k W^\top
+$$
 
-$\mat{Y}{n,o} = \sum{j=1}^J \mat{X}{n,j}\mat{W}{j,o}^T$
+Therefore:
 
-Therefore, 
+$$ \delta X_k
+:= \frac{\partial L}{\partial X_k}
+= \frac{\partial L}{\partial Y_k}\,\frac{\partial Y_k}{\partial X_k} = \delta Y_k W
+$$
 
-$\delta \mat{X}{n,i} = \sum{o=1}^{O} \delta \mat{Y}{n,o}\mat{W}{j,o}^T = \sum_{o=1}^{O} \delta \mat{Y}{n,o}\mat{W}{o,j}$
+Stacking all examples gives:
 
-In matrix form for the whole batch:
-
-$\delta \mat{X} = \mat{Y}\mat{W}$
+$$ \boxed{
+\delta X := \frac{\partial L}{\partial X} = \delta Y\, W
+} $$
 
 E. W has shape (512, 1024) and Y has shape (64, 512), The Jacobian tensor $\pderiv{\mat{Y}}{\mat{W}}$ describes, for each output element, how it changes with respect to each weight element:
 
-$(\pderiv{\mat{Y}}{\mat{W}}){n,o,p,i} = \pderiv{\mat{Y}{n,o}}{\mat{W}_{p,i}}$
+$$\Big(\pderiv{\mat{Y}}{\mat{W}}\Big)_{n,o,p,i} = \pderiv{\mat{Y}_{n,o}}{\mat{W}_{p,i}}$$
 
-Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024). If we were to make it into a block matrix, each block has shape (64, 1024).
-
-
-
-
-If we were to make it into a block matrix, each block contains all derivatives across the remaining indices $(n,i)$:
-
-$\text{block}(o,p) = \left[\pderiv{Y_{n,o}}{W_{p,i}}\right]{n=1}^{64}{}{i=1}^{1024}.$
-
-Therefore, each block has shape $(64,1024)$.
-
+Therefore, the Jacobian tensor will have shape (64, 512, 512, 1024).  If we view the Jacobian $\pderiv{\mat{Y}}{\mat{W}}$ as a 2D block matrix, we will get
+$N \times \text{out\_features}$ blocks of size
+$(\text{out\_features} \times \text{in\_features})$ such that the block $(i,j)$ is the derivative
+of the $i$-th output sample with respect to the $j$-th row of $W$. 
 """
 
 part1_q2 = r"""
@@ -62,10 +64,15 @@ part1_q2 = r"""
 
 Yes, second order derivatives (Hessian) can be helpful for optimization (but are not commonly used as it is quite expensive to compute unlike the gradient).
 
-When second order information is useful when the condition number is high.
+The second order information is useful when the condition number is high because it tells us how the slope changes in different directions.
 If the condition number is high this means that in some directions the optimization landscape is much more steep. 
 
-This means we would like to take very big learning rate in order to overcome the low steepness in one direction but a very small learning rate to overcome the high steepness in the other direction. In order to solve this contradiction, we can use Newton's method which utilizes the Hessian matrix in order to "normalize" gradient step in this case.
+This means we would like to take very big learning rate in order to overcome the low steepness in one direction but a very small learning rate to overcome the high steepness in the other direction. 
+Second order derivatives address this by rescaling the update using curvature. For example, as we learned in the lectures Newton’s method uses:
+
+$$ \theta_{t+1} = \theta_t - H^{-1} \nabla L (\theta_t) $$
+
+which effectively normalizes the step size differently along different directions, often leading to much faster convergence.
 """
 
 
@@ -99,9 +106,9 @@ def part2_optim_hp():
     # ====== YOUR CODE: ======
     wstd = 0.12
     lr_vanilla = 0.0155
-    lr_momentum = 0.0015 #0.0019 # 0.0025 # 0.0015
+    lr_momentum = 0.0019 # 0.0025 # 0.0015
     lr_rmsprop = 0.0001255 #0.000125 #0.0001
-    reg = 0.001 #0.024
+    reg = 0.024
     # ========================
     return dict(
         wstd=wstd,
@@ -151,19 +158,22 @@ $$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - {\vectr{y}} \log(\hat{\vec{y}})$
 
 Epoch 1 – 100% accuracy:
 
-$p_1 = (0.49, 0.51)$
+$$p_1 = (0.49, 0.51)$$
 
-$p_2 = (0.49, 0.51)$
+$$p_2 = (0.49, 0.51)$$
 
-$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.51, 0.51) = -log(0.51) = 0.673$
+$$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.51, 0.51) = -log(0.51) = 0.673$$
 
 Epoch 2 – 50% accuracy:
 
-$p_1 = (0.01, 0.99)$
+$$p_1 = (0.01, 0.99)$$
 
-$p_2 = (0.51, 0.49)$
+$$p_2 = (0.51, 0.49)$$
 
-$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.49, 0.99) = -log(0.99) = 0.01$
+$$\ell_{\mathrm{CE}}(\vec{y},\hat{\vec{y}}) = - (0,1)^T \cdot log(0.49, 0.99) = -log(0.99) = 0.01$$
+
+
+In the first epoch both classifications are correct but it is possible that the gradient is big enough for the first sample and much smaller for the second one such that the updated model will enforce correct classification on the first sample on the count of the second.
 """
 
 part2_q3 = r"""
@@ -180,29 +190,29 @@ Differences of gradient descent (GD) and stochastic gradient descent (SGD):
 
 - Cost - GD goes through all N examples to compute one gradient while SGD computes the gradient w.r.t only one sample, so each step is much faster.
 
-(3) Noise - GD get deterministic path and the loss usually decreases smoothly while in SGD each gradient is noisy (since it is computed on different samples each epoch) and the randomness in the sampling gives different paths.
+- Noise - GD get deterministic path and the loss usually decreases smoothly while in SGD each gradient is noisy (since it is computed on different samples each epoch) and the randomness in the sampling gives different paths.
 
 2. Yes, momentum can be used with GD. Momentum can accelerate convergence by accumulating velocity in directions with consistent gradients often leading to faster and stable convergence. The main difference from SGD is that in GD momentum is not primarily “noise smoothing”.
 
 3.  A) Let the dataset be $\mathcal{D}=\{x_i\}_{i=1}^N$ and the loss be $\ell(\theta; x_i)$.
 
-$L(\theta)=\sum_{i=1}^N \ell(\theta;x_i)$
+$$L(\theta)=\sum_{i=1}^N \ell(\theta;x_i)$$
 
 hence its gradient is:
 
-$\nabla_\theta L(\theta)=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$
+$$\nabla_\theta L(\theta)=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$$
 
 Assume we partition the dataset into disjoint batches $B_1,\dots,B_K$ such that $B_j\cap B_k=\emptyset$ for $j\neq k$ and $\bigcup_{k=1}^K B_k=\mathcal{D}$.
 The batch losses:
 
-$L_k(\theta)=\sum_{i\in B_k}\ell(\theta;x_i)$
+$$L_k(\theta)=\sum_{i\in B_k}\ell(\theta;x_i)$$
 
 Then, by linearity:
 
-$\nabla_\theta\Big(\sum_{k=1}^K L_k(\theta)\Big)
+$$\nabla_\theta\Big(\sum_{k=1}^K L_k(\theta)\Big)
 =\sum_{k=1}^K \nabla_\theta L_k(\theta)
 =\sum_{k=1}^K \sum_{i\in B_k} \nabla_\theta \ell(\theta;x_i)
-=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$
+=\sum_{i=1}^N \nabla_\theta \ell(\theta;x_i)$$
 
 Therefore, a backward pass on the sum of losses over all disjoint batches is equivalent to GD.
 
@@ -362,21 +372,21 @@ Let $K_{width}, K_{height}$ be the kernel dimensions of a convolution, and let $
 
 - In regular block each convolution has kernel $3 \times 3$, with $C_{in} = C_{out} = 256$ Therefore:
 
-$ \# params_{regular} = 2 \cdot (3 \cdot 3 \cdot 256 \cdot 256) = 1179648$
+$$ \# params_{regular} = 2 \cdot (3 \cdot 3 \cdot 256 \cdot 256) = 1179648$$
 
 - The bottleneck consists of: $1 \times 1$ convolution with $C_{in} = 64, C_{out} = 256$, after $3 \times 3$ convolution with $C_{in} = C_{out} = 64$, after $1 \times 1$ convolution with $C_{in} = 256, C_{out} = 64$.
 
-$ \# params_{bottleneck} = (1 \cdot 1 \cdot 256 \cdot 64) + (3 \cdot 3 \cdot 64 \cdot 64) + (1 \cdot 1 \cdot 64 \cdot 256) = 69632$
+$$ \# params_{bottleneck} = (1 \cdot 1 \cdot 256 \cdot 64) + (3 \cdot 3 \cdot 64 \cdot 64) + (1 \cdot 1 \cdot 64 \cdot 256) = 69632$$
 
 Overall we get:
 
-$ \frac{\# params_{regular}}{\# params_{bottleneck}} = \frac{1179648}{69632} = 16.941$
+$$ \frac{\# params_{regular}}{\# params_{bottleneck}} = \frac{1179648}{69632} = 16.941$$
 
 2) Number of floating point operations required to compute an output (qualitative assessment):
 
 Compute is proportional to: $ \# flops = H \cdot W \cdot K_{width} \cdot K_{height} \cdot C_{in} \cdot C_{out}$. Therefore:
 
-$ \frac{\# flops_{regular}}{\# flops_{bottleneck}} = \frac{H \cdot W \cdot 1179648}{H \cdot W \cdot 69632} = 16.941$
+$$ \frac{\# flops_{regular}}{\# flops_{bottleneck}} = \frac{H \cdot W \cdot 1179648}{H \cdot W \cdot 69632} = 16.941$$
 
 3) Ability to combine the input: 
 
@@ -397,37 +407,35 @@ Given $M$ a $m \times n$ matrix with small entries meaning $ \forall i,j  ; |M_{
 
 1) Given $y_1 = M \cdot x_1$, $\frac{\partial L}{\partial y_1}$, we can use the chain rule to derive:
 
-$\frac{\partial L}{\partial x_1} = \frac{\partial L}{\partial y_1} \frac{\partial y_1}{\partial x_1} = M \frac{\partial L}{\partial y_1}$.
+$$\frac{\partial L}{\partial x_1} = \frac{\partial L}{\partial y_1} \frac{\partial y_1}{\partial x_1} = M \frac{\partial L}{\partial y_1}$$.
 
 
 2) Given $ y_2 = x_2 + M \cdot x_2 $, $ \frac{\partial L}{\partial y_2} $, we can use the chain rule to derive:
 
-$ \frac{\partial L}{\partial x_2} = \frac{\partial L}{\partial y_2} \frac{\partial y_2}{\partial x_2} = (M + I) \frac{\partial L}{\partial y_2}$.
+$$ \frac{\partial L}{\partial x_2} = \frac{\partial L}{\partial y_2} \frac{\partial y_2}{\partial x_2} = (M + I) \frac{\partial L}{\partial y_2}$$.
 
 3) Assume each layer is $x^{(t)} = M_t\,x^{(t-1)}$.
 
 By the chain rule,
 
-$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = M_t^{\top}\,\frac{\partial L}{\partial x^{(t)}}$.
+$$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = M_t^{\top}\,\frac{\partial L}{\partial x^{(t)}}$$.
 
 Applying this repeatedly over $k$ layers gives
 
-$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} M_t\right)\frac{\partial L}{\partial x^{(k)}}$.
+$$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} M_t\right)\frac{\partial L}{\partial x^{(k)}}$$.
 
 If the matrices $M_t$ have small entries, multiplying many of them leading to vanishing gradients.
 
 
 On the other hand with skip:
 
-$x^{(t)} = x^{(t-1)} + M_t\,x^{(t-1)} = (I+M_t)\,x^{(t-1)}$.
+$$x^{(t)} = x^{(t-1)} + M_t\,x^{(t-1)} = (I+M_t)\,x^{(t-1)}$$.
 
-Then
-
-$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = (I+M_t)\,\frac{\partial L}{\partial x^{(t)}}$.
+$$\frac{\partial L}{\partial x^{(t-1)}} = \frac{\partial x^{(t)}}{\partial x^{(t-1)}} \frac{\partial L}{\partial x^{(t)}} = (I+M_t)\,\frac{\partial L}{\partial x^{(t)}}$$.
 
 Over $k$ layers,
 
-$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} (I+M_t)\right)\frac{\partial L}{\partial x^{(k)}}$.
+$$\frac{\partial L}{\partial x^{(0)}} = \left(\prod_{t=1}^{k} (I+M_t)\right)\frac{\partial L}{\partial x^{(k)}}$$.
 
 When $M_t$ have small entries, $(I+M_t)$ is close to the identity, so the product is much less likely to shrink the gradient.
 """
@@ -439,16 +447,16 @@ When $M_t$ have small entries, $(I+M_t)$ is close to the identity, so the produc
 
 
 part5_q1 = r"""
+Explain the effect of depth on the accuracy. What depth produces the best results and why do you think that's the case?
+Were there values of L for which the network wasn't trainable? what causes this? Suggest two things which may be done to resolve it at least partially.
+
 **Your answer:**
+As seen in the results of the train and test, we can see the following phenomena:
+1. The shallow models L=2,4: The models learned successfully but it seems that L=2 model was two shallow and didn't reach test and train results as good as L=4.
+2. The deeper models couldn't train due to................
 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+To resolve this issue, we could have used residuals as a way to prevent vanishing gradients (de facto allowing the model to remember the input sample in each layer).
 """
 
 part5_q2 = r"""
