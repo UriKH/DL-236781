@@ -237,8 +237,8 @@ class YourCNN(CNN):
     #     self.dropout_mlp = 0.1
     #     self.stem_width1 = 8
     #     self.stem_width2 = 16
-        batchnorm = kwargs.get('batchnorm', True)
-        dropout = kwargs.get('dropout', 0.2)
+        batchnorm = kw.get('batchnorm', True)
+        dropout = kw.get('dropout', 0.2)
         
         super().__init__(
             in_size=in_size,
