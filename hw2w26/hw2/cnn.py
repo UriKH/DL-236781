@@ -216,7 +216,7 @@ class InceptionResNetBlock(nn.Module):
         x = nn.LeakyReLU()(self.bn(x))
         return x
         
-class YourCNN(CNN):    
+class YourCNN(ResNet):    
     def __init__(
         self,
         in_size,
@@ -238,7 +238,7 @@ class YourCNN(CNN):
     #     self.stem_width1 = 8
     #     self.stem_width2 = 16
         batchnorm = kw.get('batchnorm', True)
-        dropout = kw.get('dropout', 0.2)
+        dropout = kw.get('dropout', 0.25)
         
         super().__init__(
             in_size=in_size,
