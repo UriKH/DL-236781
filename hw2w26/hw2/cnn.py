@@ -480,7 +480,7 @@ class YourCNN(ResNet):
             activation_type='relu',
             activation_params=dict(),
             pooling_type='max',
-            pooling_params=dict(kernel_size=2),
+            pooling_params=dict(kernel_size=2, stride=2),
         )
         
     #     in_dim = self._n_features()
