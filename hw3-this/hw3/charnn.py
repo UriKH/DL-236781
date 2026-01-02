@@ -248,32 +248,29 @@ class MultilayerGRU(nn.Module):
         # ====== YOUR CODE: ======
         self.layer_params = nn.ModuleList()
 
-        # 1. Create the RNN Layers (Indices 0 to n_layers-1)
-        for i in range(n_layers):
-            # First layer takes 'in_dim', others take 'h_dim'
-            layer_input_dim = in_dim if i == 0 else h_dim
-            
-            # The forward method unpacks exactly 7 items per layer
+        # ----- GRU layers -----
+        for layer_idx in range(n_layers):
+            layer_input_dim = in_dim if layer_idx == 0 else h_dim
+            update_wx = nn.Linear(layer_input_dim, h_dim, bias=True)
+            update_wh = nn.Linear(h_dim, h_dim, bias=False)
+            reset_wx = nn.Linear(layer_input_dim, h_dim, bias=True)
+            reset_wh = nn.Linear(h_dim, h_dim, bias=False)
+            candidate_wx = nn.Linear(layer_input_dim, h_dim, bias=True)
+            candidate_wh = nn.Linear(h_dim, h_dim, bias=False)
+            dropout_layer = nn.Dropout(dropout)
+
             layer_modules = nn.ModuleList([
-                nn.Linear(layer_input_dim, h_dim), # update_wx
-                nn.Linear(h_dim, h_dim),           # update_wh
-                nn.Linear(layer_input_dim, h_dim), # reset_wx
-                nn.Linear(h_dim, h_dim),           # reset_wh
-                nn.Linear(layer_input_dim, h_dim), # candidate_wx
-                nn.Linear(h_dim, h_dim),           # candidate_wh
-                nn.Dropout(dropout)                # dropout_layer
+                update_wx, update_wh,
+                reset_wx, reset_wh,
+                candidate_wx, candidate_wh,
+                dropout_layer
             ])
             self.layer_params.append(layer_modules)
 
-        # 2. Create the Output Layer (Index -1)
-        # The forward code does: self.layer_params[-1][0](...)
-        # So we must wrap the output layer in a list/ModuleList
-        output_module = nn.ModuleList([
-            nn.Linear(h_dim, out_dim)
+        output_layer = nn.ModuleList([
+            nn.Linear(h_dim, out_dim, bias=True)
         ])
-        
-        # Append it to the END of layer_params
-        self.layer_params.append(output_module)
+        self.layer_params.append(output_layer)
         # ========================
 
     def forward(self, input: Tensor, hidden_state: Tensor = None):
