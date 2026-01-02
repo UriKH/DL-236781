@@ -146,7 +146,7 @@ def hot_softmax(y, dim=0, temperature=1.0):
     """
     # TODO: Implement based on the above.
     # ====== YOUR CODE: ======
-    pass
+    return torch.softmax(y / temperature, dim=dim)
     # ========================
 
 
@@ -181,7 +181,25 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
     #  necessary for this. Best to disable tracking for speed.
     #  See torch.no_grad().
     # ====== YOUR CODE: ======
-    pass
+    vocab_size = len(char_to_idx)
+
+    with torch.no_grad():
+        start_embedded = chars_to_onehot(start_sequence, char_to_idx)
+        start_embedded = start_embedded.unsqueeze(0).to(device=device, dtype=torch.float)
+        out, hidden_state = model(start_embedded)
+        last_logits = out[:, -1, :]
+        num_to_generate = n_chars - len(start_sequence)
+        
+        for _ in range(num_to_generate):
+            probs = hot_softmax(last_logits, dim=-1, temperature=T)
+            next_idx_tensor = torch.multinomial(probs, num_samples=1)
+            next_idx = next_idx_tensor.item()
+            next_char = idx_to_char[next_idx]
+            out_text += next_char
+            next_embedded = chars_to_onehot(next_char, char_to_idx)
+            next_embedded = next_embedded.unsqueeze(0).to(device=device, dtype=torch.float)
+            out, hidden_state = model(next_embedded, hidden_state)
+            last_logits = out[:, -1, :]
     # ========================
 
     return out_text
