@@ -94,7 +94,42 @@ class Trainer(abc.ABC):
             #  - Implement early stopping. This is a very useful and
             #    simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            pass
+            train_result = self.train_epoch(dl_train, verbose=verbose, **kw)
+            test_result = self.test_epoch(dl_test, verbose=verbose, **kw)
+
+            train_epoch_loss = sum(train_result.losses) / len(train_result.losses)
+            test_epoch_loss = sum(test_result.losses) / len(test_result.losses)
+
+            train_loss.append(train_epoch_loss)
+            train_acc.append(train_result.accuracy)
+            test_loss.append(test_epoch_loss)
+            test_acc.append(test_result.accuracy)
+
+            actual_num_epochs = epoch + 1
+
+            if best_acc is None or test_result.accuracy > best_acc:
+                best_acc = test_result.accuracy
+                save_checkpoint = True
+                epochs_without_improvement = 0
+            else:
+                epochs_without_improvement += 1
+
+            if early_stopping is not None:
+                if epoch == 0 and not hasattr(self, "_best_test_loss"):
+                    self._best_test_loss = test_epoch_loss
+                    self._ewi_loss = 0
+                elif not hasattr(self, "_best_test_loss"):
+                    self._best_test_loss = test_epoch_loss
+                    self._ewi_loss = 0
+
+                if test_epoch_loss < self._best_test_loss:
+                    self._best_test_loss = test_epoch_loss
+                    self._ewi_loss = 0
+                else:
+                    self._ewi_loss += 1
+
+                if self._ewi_loss >= early_stopping:
+                    break
             # ========================
 
             # Save model checkpoint if requested
@@ -222,14 +257,14 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        self.hidden_state = None
+        pass
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        self.hidden_state = None
+        pass
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -251,9 +286,8 @@ class RNNTrainer(Trainer):
         self.model.train(True)
         self.optimizer.zero_grad()
 
-        # h = None
-        logits, new_state = self.model(x, self.hidden_state) 
-        self.hidden_state = new_state.detach()
+        h = None
+        logits, h = self.model(x, h) 
         logits_flat = logits.reshape(B * S, -1)
         targets_flat = y.reshape(B * S) 
 
@@ -284,9 +318,8 @@ class RNNTrainer(Trainer):
             # ====== YOUR CODE: ======
             B, S = y.shape
             self.model.train(False)
-            # h = None
-            logits, new_state = self.model(x, self.hidden_state) 
-            self.hidden_state = new_state
+            h = None
+            logits, h = self.model(x, h)  # (B,S,O)
 
             logits_flat = logits.reshape(B * S, -1)
             targets_flat = y.reshape(B * S)
