@@ -247,7 +247,21 @@ class RNNTrainer(Trainer):
         #  - Update params
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        pass
+        B, S = y.shape
+        self.model.train(True)
+        self.optimizer.zero_grad()
+
+        h = None
+        logits, h = self.model(x, h) 
+        logits_flat = logits.reshape(B * S, -1)
+        targets_flat = y.reshape(B * S) 
+
+        loss = self.loss_fn(logits_flat, targets_flat)
+        loss.backward()
+        self.optimizer.step()
+
+        preds = logits.argmax(dim=-1)  # (B,S)
+        num_correct = (preds == y).sum()
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -267,7 +281,18 @@ class RNNTrainer(Trainer):
             #  - Loss calculation
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            pass
+            B, S = y.shape
+            self.model.train(False)
+            h = None
+            logits, h = self.model(x, h)  # (B,S,O)
+
+            logits_flat = logits.reshape(B * S, -1)
+            targets_flat = y.reshape(B * S)
+
+            loss = self.loss_fn(logits_flat, targets_flat)
+
+            preds = logits.argmax(dim=-1)
+            num_correct = (preds == y).sum()
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)
