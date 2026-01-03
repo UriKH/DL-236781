@@ -257,14 +257,14 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        pass
+        self.hidden_state = None
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        pass
+        self.hidden_state = None
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -286,8 +286,9 @@ class RNNTrainer(Trainer):
         self.model.train(True)
         self.optimizer.zero_grad()
 
-        h = None
-        logits, h = self.model(x, h) 
+        # h = None
+        logits, new_state = self.model(x, self.hidden_state) 
+        self.hidden_state = new_state.detach()
         logits_flat = logits.reshape(B * S, -1)
         targets_flat = y.reshape(B * S) 
 
@@ -318,8 +319,9 @@ class RNNTrainer(Trainer):
             # ====== YOUR CODE: ======
             B, S = y.shape
             self.model.train(False)
-            h = None
-            logits, h = self.model(x, h)  # (B,S,O)
+            # h = None
+            logits, new_state = self.model(x, self.hidden_state) 
+            self.hidden_state = new_state
 
             logits_flat = logits.reshape(B * S, -1)
             targets_flat = y.reshape(B * S)
