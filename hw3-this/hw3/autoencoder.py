@@ -19,18 +19,20 @@ class EncoderCNN(nn.Module):
         #  use pooling or only strides, use any activation functions,
         #  use BN or Dropout, etc.
         # ====== YOUR CODE: ======
-        hidden_dims = [64, 128]
-        modules.append(nn.Conv2d(in_channels, hidden_dims[0], kernel_size=3, stride=2, padding=1))
-        modules.append(nn.BatchNorm2d(hidden_dims[0]))
-        modules.append(nn.LeakyReLU(0.2))
-        
-        modules.append(nn.Conv2d(hidden_dims[0], hidden_dims[1], kernel_size=3, stride=2, padding=1))
-        modules.append(nn.BatchNorm2d(hidden_dims[1]))
-        modules.append(nn.LeakyReLU(0.2))
-
-        modules.append(nn.Conv2d(hidden_dims[1], out_channels, kernel_size=3, stride=2, padding=1))
-        modules.append(nn.BatchNorm2d(out_channels))
-        modules.append(nn.LeakyReLU(0.2))
+        hidden_dims = [in_channels, 32, 64, 128, 256, out_channels]
+        for i in range(len(hidden_dims) - 1):
+            modules.append(
+                nn.Conv2d(
+                    hidden_dims[i],
+                    hidden_dims[i + 1],
+                    kernel_size=3,
+                    stride=2,
+                    padding=1
+                )
+            )
+            if i < len(hidden_dims) - 2:
+                modules.append(nn.BatchNorm2d(hidden_dims[i + 1]))
+                modules.append(nn.LeakyReLU(0.01))
         # ========================
         self.cnn = nn.Sequential(*modules)
 
@@ -53,20 +55,21 @@ class DecoderCNN(nn.Module):
         #  output should be a batch of images, with same dimensions as the
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        hidden_dims = [128, 64]
-
-        # Layer 1: Input (e.g. 256) -> 128
-        modules.append(nn.ConvTranspose2d(in_channels, hidden_dims[0], kernel_size=3, stride=2, padding=1, output_padding=1))
-        modules.append(nn.BatchNorm2d(hidden_dims[0]))
-        modules.append(nn.LeakyReLU(0.2))
-
-        # Layer 2: 128 -> 64
-        modules.append(nn.ConvTranspose2d(hidden_dims[0], hidden_dims[1], kernel_size=3, stride=2, padding=1, output_padding=1))
-        modules.append(nn.BatchNorm2d(hidden_dims[1]))
-        modules.append(nn.LeakyReLU(0.2))
-
-        # Layer 3: 64 -> out_channels
-        modules.append(nn.ConvTranspose2d(hidden_dims[1], out_channels, kernel_size=3, stride=2, padding=1, output_padding=1))
+        hidden_dims = [in_channels, 256, 128, 64, 32, out_channels]
+        for i in range(len(hidden_dims) - 1):
+            modules.append(
+                nn.ConvTranspose2d(
+                    hidden_dims[i],
+                    hidden_dims[i + 1],
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                    output_padding=1
+                )
+            )
+            if i < len(hidden_dims) - 2:
+                modules.append(nn.BatchNorm2d(hidden_dims[i + 1]))
+                modules.append(nn.LeakyReLU(0.01))
         # ========================
         self.cnn = nn.Sequential(*modules)
 
