@@ -11,17 +11,25 @@ math (delimited with $$).
 
 def part1_rnn_hyperparams():
     hypers = dict(
-        batch_size=32,
-        seq_len=64,
-        h_dim=1024,
-        n_layers=3,
-        dropout=0.2,
-        learn_rate=0.01,
-        lr_sched_factor=0.5,
-        lr_sched_patience=5,
+        batch_size=0,
+        seq_len=0,
+        h_dim=0,
+        n_layers=0,
+        dropout=0,
+        learn_rate=0,
+        lr_sched_factor=0,
+        lr_sched_patience=0,
     )
     # TODO: Set the hyperparameters to train the model.
     # ====== YOUR CODE: ======
+    hypers["batch_size"] = 32
+    hypers["seq_len"] = 64
+    hypers["h_dim"] = 512
+    hypers["n_layers"] = 3
+    hypers["dropout"] = 0.2
+    hypers["learn_rate"] = 0.01
+    hypers["lr_sched_factor"] = 0.5
+    hypers["lr_sched_patience"] = 0.5
     # ========================
     return hypers
 
@@ -66,7 +74,12 @@ def part2_vae_hyperparams():
     )
     # TODO: Tweak the hyperparameters to generate a former president.
     # ====== YOUR CODE: ======
-    pass
+    hypers["batch_size"] = 32
+    hypers["h_dim"] = 512
+    hypers["z_dim"] = 256
+    hypers["x_sigma2"] = 1e-3
+    hypers["learn_rate"] = 1e-3
+    hypers["betas"] = (0.5,0.999)
     # ========================
     return hypers
 
