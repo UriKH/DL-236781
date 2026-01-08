@@ -26,7 +26,37 @@ def sliding_window_attention(q, k, v, window_size, padding_mask=None):
     values, attention = None, None
 
     # ====== YOUR CODE: ======
-    pass
+    has_heads = (q.dim() == 4)
+    num_heads = q.shape[1] if has_heads else 1
+    scores = torch.matmul(q, k.transpose(-1, -2)) / math.sqrt(embed_dim)
+    idx = torch.arange(seq_len, device=q.device)
+    band = (idx[:, None] - idx[None, :]).abs() <= (window_size // 2)
+
+    if has_heads:
+        attn_mask = band.view(1, 1, seq_len, seq_len).expand(batch_size, num_heads, seq_len, seq_len)
+    else:
+        attn_mask = band.view(1, seq_len, seq_len).expand(batch_size, seq_len, seq_len)
+
+    if padding_mask is not None:
+        pm = padding_mask.to(q.device).bool()  # True=real, False=pad
+        if has_heads:
+            key_mask = pm.view(batch_size, 1, 1, seq_len).expand(batch_size, num_heads, seq_len, seq_len)
+            query_mask = pm.view(batch_size, 1, seq_len, 1)  # for later
+        else:
+            key_mask = pm.view(batch_size, 1, seq_len).expand(batch_size, seq_len, seq_len)
+            query_mask = pm.view(batch_size, seq_len, 1)
+        attn_mask = attn_mask & key_mask
+    else:
+        query_mask = None
+
+    neg_large = torch.finfo(scores.dtype).min
+    scores = scores.masked_fill(~attn_mask, neg_large)
+    attention = torch.softmax(scores, dim=-1)
+    attention = attention * attn_mask.to(attention.dtype)
+
+    if query_mask is not None:
+        attention = attention * query_mask.to(attention.dtype)
+    values = torch.matmul(attention, v)
     # ======================
 
     return values, attention
@@ -69,7 +99,11 @@ class MultiHeadAttention(nn.Module):
         # Determine value outputs
         # call the sliding window attention function you implemented
         # ====== YOUR CODE: ======
-        pass
+        values, attention = sliding_window_attention(
+            q, k, v,
+            window_size=self.window_size,
+            padding_mask=padding_mask
+        )
         # ========================
 
         values = values.permute(0, 2, 1, 3) # [Batch, SeqLen, Head, Dims]
@@ -146,7 +180,10 @@ class EncoderLayer(nn.Module):
         '''
 
         # ====== YOUR CODE: ======
-        pass
+        attn_out = self.self_attn(x, padding_mask)
+        x = self.norm1(x + self.dropout(attn_out))
+        ff_out = self.feed_forward(x)
+        x = self.norm2(x + self.dropout(ff_out))
         # ========================
         
         return x
@@ -188,7 +225,20 @@ class Encoder(nn.Module):
         output = None
 
         # ====== YOUR CODE: ======
-        pass
+        embed_dim = self.encoder_embedding.embedding_dim
+
+        x = self.encoder_embedding(sentence) * math.sqrt(embed_dim)
+        x = self.positional_encoding(x)
+        x = self.dropout(x)
+
+        for layer in self.encoder_layers:
+            x = layer(x, padding_mask)
+
+        mask = padding_mask.unsqueeze(-1).to(x.dtype)
+        x_sum = (x * mask).sum(dim=1)
+        denom = mask.sum(dim=1).clamp(min=1.0)
+        pooled = x_sum / denom 
+        output = self.classification_mlp(pooled).squeeze(-1) 
         # ========================
         
         
