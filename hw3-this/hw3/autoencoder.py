@@ -19,20 +19,20 @@ class EncoderCNN(nn.Module):
         #  use pooling or only strides, use any activation functions,
         #  use BN or Dropout, etc.
         # ====== YOUR CODE: ======
-        hidden_dims = [in_channels, 32, 64, 128, 256, out_channels]
+        hidden_dims = [in_channels, 128, 256, 512, out_channels]
         for i in range(len(hidden_dims) - 1):
             modules.append(
                 nn.Conv2d(
                     hidden_dims[i],
                     hidden_dims[i + 1],
-                    kernel_size=3,
+                    kernel_size=4,
                     stride=2,
                     padding=1
                 )
             )
             if i < len(hidden_dims) - 2:
                 modules.append(nn.BatchNorm2d(hidden_dims[i + 1]))
-                modules.append(nn.LeakyReLU(0.01))
+                modules.append(nn.LeakyReLU(0.2))
         # ========================
         self.cnn = nn.Sequential(*modules)
 
@@ -55,21 +55,20 @@ class DecoderCNN(nn.Module):
         #  output should be a batch of images, with same dimensions as the
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        hidden_dims = [in_channels, 256, 128, 64, 32, out_channels]
+        hidden_dims = [in_channels, 512, 256, 128, out_channels]
         for i in range(len(hidden_dims) - 1):
             modules.append(
                 nn.ConvTranspose2d(
                     hidden_dims[i],
                     hidden_dims[i + 1],
-                    kernel_size=3,
+                    kernel_size=4,
                     stride=2,
-                    padding=1,
-                    output_padding=1
+                    padding=1
                 )
             )
             if i < len(hidden_dims) - 2:
                 modules.append(nn.BatchNorm2d(hidden_dims[i + 1]))
-                modules.append(nn.LeakyReLU(0.01))
+                modules.append(nn.LeakyReLU(0.2))
         # ========================
         self.cnn = nn.Sequential(*modules)
 
