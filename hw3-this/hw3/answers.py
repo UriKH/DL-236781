@@ -173,48 +173,7 @@ part2_q4 = r"""
 
 
 # ==============
-# Part 2 answers
-
-PART2_CUSTOM_DATA_URL = None
-
-
-def part2_vae_hyperparams():
-    hypers = dict(
-        batch_size=0, h_dim=0, z_dim=0, x_sigma2=0, learn_rate=0.0, betas=(0.0, 0.0),
-    )
-    # TODO: Tweak the hyperparameters to generate a former president.
-    # ====== YOUR CODE: ======
-    # hypers["batch_size"] = 64
-    # hypers["h_dim"] = 1024
-    # hypers["z_dim"] = 512
-    # hypers["x_sigma2"] = 2e-3
-    # hypers["learn_rate"] = 2e-4
-    # hypers["betas"] = (0.5,0.999)
-    hypers["batch_size"] = 8
-    hypers["h_dim"] = 512
-    hypers["z_dim"] = 16
-    hypers["x_sigma2"] = 1.0
-    hypers["learn_rate"] = 2e-4
-    hypers["betas"] = (0.5,0.999)
-    # ========================
-    return hypers
-
-
-part2_q1 = r"""
-**Your answer:**
-"""
-
-part2_q2 = r"""
-**Your answer:**
-"""
-
-part2_q3 = r"""
-**Your answer:**
-"""
-
-part2_q4 = r"""
-**Your answer:**
-"""
+# Part 3 answers
 
 
 def part3_transformer_encoder_hyperparams():
