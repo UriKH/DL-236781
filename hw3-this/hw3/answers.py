@@ -46,14 +46,47 @@ def part1_generation_params():
 
 part1_q1 = r"""
 **Your answer:**
+
+We split the corpus into sequences instead of training on the whole text because:
+
+1) Memory limits – training on one enormous sequence would require storing activations and gradients for all timesteps for backprop.
+
+2) Backprop is very hard – long sequences make training slow and unstable due to vanishing/exploding gradients:
+
+In an RNN, there is a hidden state $h_t$ that is updated at every time step according to
+
+$$ h_t = f(h_{t-1}, x_t). $$
+
+When backpropagating, the gradient w.r.t prevoius hidden state involves a product of many derivatives across time:
+
+$$ \frac{\partial L}{\partial h_{t-k}} =
+\frac{\partial L}{\partial h_t}
+\prod_{i=t-k+1}^{t}
+\frac{\partial h_i}{\partial h_{i-1}} $$
+
+Multiplying many small values can make the product shrink and the model struggles to learn, while multiplying many large values can lead to extremely large gradients and unstable parameter updates.
+
+
+3) More training samples – a long text yields many shorter input and target pairs, helping to optimize the model and get better generalization.
+
 """
 
 part1_q2 = r"""
 **Your answer:**
+
+It is possible that the generated text shows memory longer than the sequence length because $S$ limits how far gradients are backpropagated, and not how long information can persist during the forward computation.
+
+The hidden state can be carried forward across consecutive batches, such that the initial hidden state $h_0^{(i)}$ of batch $i$ is the final hidden state $h_t^{(i-1)}$ of the previous batch. During generation, we sample one character at a time, feed it back into the model, and propagate $h_t$ continuously.
+
+Therefore, information from much earlier batches can influence later predictions through the evolving chain of hidden states, even when the training used truncated sequences.
 """
 
 part1_q3 = r"""
 **Your answer:**
+
+We are not shuffling the order of batches when training because the training setup assumes that the tokens in the next batch are the direct continuation of the tokens in the previous batch. This allows the model to keep using the hidden state accumulated from the previous batch.
+
+If we shuffle batches, the next batch will no longer continue the previous text, so the hidden state carried over from the previous batch will not match the new tokens. This makes training inconsistent and noisy, and it hurts the model’s ability to learn longer range dependencies.
 """
 
 part1_q4 = r"""
