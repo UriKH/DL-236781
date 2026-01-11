@@ -91,6 +91,83 @@ If we shuffle batches, the next batch will no longer continue the previous text,
 
 part1_q4 = r"""
 **Your answer:**
+
+1. We lower the temperature for sampling (compared to the default of 0.1) in order to make the generated text more coherent and to reduce random or low probability choices. Temperature controls how sharp or flat the softmax distribution:
+
+$$ p_i = \text{softmax}\big( \frac{s_i}{T} \big)$$
+
+where $s_i$ is the score of the $i$'th sample.
+
+2. When the temperature is very high, sampling becomes more random and we get noisier text with more mistakes and less structure. That becuase dividing by a large $T$ shrinks scores differences making the softmax flatter and closer to a uniform distribution.
+
+3. When the temperature is very low, sampling becomes nearly deterministic (similar to argmax), producing more consistent text, but often repetitive and less diverse (can get stuck in loops). That becuase dividing by a small $T$ amplifies scores differences making the softmax very sharp.
+"""
+# ==============
+
+
+# ==============
+# Part 2 answers
+
+PART2_CUSTOM_DATA_URL = None
+
+
+def part2_vae_hyperparams():
+    hypers = dict(
+        batch_size=0, h_dim=0, z_dim=0, x_sigma2=0, learn_rate=0.0, betas=(0.0, 0.0),
+    )
+    # TODO: Tweak the hyperparameters to generate a former president.
+    # ====== YOUR CODE: ======
+    # hypers["batch_size"] = 64
+    # hypers["h_dim"] = 1024
+    # hypers["z_dim"] = 512
+    # hypers["x_sigma2"] = 2e-3
+    # hypers["learn_rate"] = 2e-4
+    # hypers["betas"] = (0.5,0.999)
+    hypers["batch_size"] = 8
+    hypers["h_dim"] = 512
+    hypers["z_dim"] = 16
+    hypers["x_sigma2"] = 1.0
+    hypers["learn_rate"] = 2e-4
+    hypers["betas"] = (0.5,0.999)
+    # ========================
+    return hypers
+
+
+part2_q1 = r"""
+**Your answer:**
+
+The $\sigma^2$ hyperparameter is the likelhood variance in the VAE’s decoder model $p(x \mid z)$. In your implementation it scales the reconstruction term:
+
+$$ data\_loss = MSE(xr, x) / x\_sigma2 $$
+
+So it effectively controls the relative weight of reconstruction accuracy versus the KL regularization term.
+
+- High values - the reconstruction loss becomes smaller and the KL term becomes relatively more important. The model tolerates reconstruction errors more (often blurrier reconstructions) but the latent distribution is pushed closer to $N(0,1)$ usually giving
+
+
+- Low values - the reconstruction loss becomes large and dominates. The model is strongly penalized for reconstruction errors, so reconstructions are typically sharper and more accurate, but the latent space may be less regularized
+"""
+
+part2_q2 = r"""
+**Your answer:**
+1. \textbf{VAE loss term- reconstruction loss -} encourages the decoder to reconsruct the input $X$ accurately from the latent variable $Z$. It forces $Z$ to contain enough information about $X$ so that the reconstruction $\hat{X}$ will be close to the original input $x$.
+
+\textbf{KL divergence loss -} regularizes the encoder’s posterior $p(X \mid Z)$ to be close to a chosen prior $p(Z)$. This shapes the latent space so that latent codes $Z$ will not spread arbitrarily and instead follow some distribution similar to the prior.
+
+2. The KL loss term affect latent space distribution by pushing $p(X \mid Z)$ toward normal distribution $N(0,1)$, making latent representations more centered, smoother and less fragmented into isolated regions.
+
+3. The benefit of this effect is that because the latent space matches the prior, we can sample $z$ and decode it to generate realistic outputs. It also creates a smooth latent space where nearby $Z$ values produce similar outputs (good for interpolation), and it acts as regularization to reduce overfiting.
+"""
+
+part2_q3 = r"""
+**Your answer:**
+
+In the formulation of the VAE loss, we start by maximizing the evidence distribution $p(X)$ because it measures how probable the training data is according to our model (after integrating out the latent variable $Z$). Therefore, maximizing $p(X)$ is equivallent maximum likelihood learning - choosing model parameters so the model explains the observed data as well as possible.
+"""
+
+part2_q4 = r"""
+**Your answer:**
+ 
 """
 # ==============
 
