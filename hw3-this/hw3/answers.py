@@ -159,7 +159,9 @@ def part3_transformer_encoder_hyperparams():
 
 
 part3_q1 = r"""
-**Your answer:**
+Stacking encoder layers that use the sliding-window attention results in a broader context in the final layer beacuse it effectively implements information propagation.
+
+While a single layer only captures local relationships (immediate neighbors within the window), each subsequent layer aggregates representations that already contain the information of their window neighbors. This allows distant information to travel step-by-step through the network. Just like in CNNs, stacking layers effectively increases the receptive field, allowing a token in the final layer to incorporate information from a wide span of the original input, despite only explicitly attending to a small local window at each step - the receptive field at the final layer grows linearly with the depth of the network. 
 """
 
 part3_q2 = r"""
