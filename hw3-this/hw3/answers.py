@@ -165,7 +165,14 @@ While a single layer only captures local relationships (immediate neighbors with
 """
 
 part3_q2 = r"""
-**Your answer:**
+Proposal:
+We propose using a Dilated Attention pattern. Instead of a contiguous block of neighbors, the window includes gaps (skipping tokens), similar to dilated convolutions in CNNs. For example, a token at $i$ might attend to $[i-d, i, i+d]$.
+
+Complexity Analysis:
+The time complexity remains $O(nw)$. Even though the window spans a wider distance in the text, the actual number of dot-product operations per token stays fixed at $w$. We are simply changing which indices are computed, not how many. 
+
+Global Information & Layers:
+This allows the model to capture a wider view much earlier in the network. If we increase the dilation rate exponentially with each layer (e.g., 1, 2, 4, 8...), the receptive field grows exponentially ($O(2^L)$). This means we need significantly fewer layers to achieve full sequence-wide coverage compared to the standard sliding window.Limitations:The main limitation is the loss of local context. By skipping intermediate tokens, the model might miss fine-grained dependencies (like immediate syntactic relationships) between the gaps.
 """
 
 # ==============
