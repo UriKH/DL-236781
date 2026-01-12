@@ -225,20 +225,12 @@ class Encoder(nn.Module):
         output = None
 
         # ====== YOUR CODE: ======
-        embed_dim = self.encoder_embedding.embedding_dim
-
-        x = self.encoder_embedding(sentence) * math.sqrt(embed_dim)
+        x = self.encoder_embedding(sentence)  
         x = self.positional_encoding(x)
         x = self.dropout(x)
-
         for layer in self.encoder_layers:
-            x = layer(x, padding_mask)
-
-        mask = padding_mask.unsqueeze(-1).to(x.dtype)
-        x_sum = (x * mask).sum(dim=1)
-        denom = mask.sum(dim=1).clamp(min=1.0)
-        pooled = x_sum / denom 
-        output = self.classification_mlp(pooled).squeeze(-1) 
+            x = layer(x, padding_mask)  
+        output = self.classification_mlp(x[:, 0, :])
         # ========================
         
         
