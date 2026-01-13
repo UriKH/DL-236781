@@ -39,6 +39,7 @@ def part1_generation_params():
     temperature = 0.0001
     # TODO: Tweak the parameters to generate a literary masterpiece.
     # ====== YOUR CODE: ======
+    temperature = 0.5
     start_seq = "To be, or not to be, "
     # ========================
     return start_seq, temperature
