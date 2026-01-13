@@ -23,10 +23,10 @@ def part1_rnn_hyperparams():
     # TODO: Set the hyperparameters to train the model.
     # ====== YOUR CODE: ======
     hypers["batch_size"] = 64
-    hypers["seq_len"] = 128
-    hypers["h_dim"] = 128
-    hypers["n_layers"] = 3
-    hypers["dropout"] = 0.4
+    hypers["seq_len"] = 64
+    hypers["h_dim"] = 64
+    hypers["n_layers"] = 1
+    hypers["dropout"] = 0.2
     hypers["learn_rate"] = 3e-4
     hypers["lr_sched_factor"] = 0.5
     hypers["lr_sched_patience"] = 2
@@ -39,7 +39,7 @@ def part1_generation_params():
     temperature = 0.0001
     # TODO: Tweak the parameters to generate a literary masterpiece.
     # ====== YOUR CODE: ======
-    pass
+    start_seq = "To be, or not to be, "
     # ========================
     return start_seq, temperature
 
@@ -117,16 +117,10 @@ def part2_vae_hyperparams():
     )
     # TODO: Tweak the hyperparameters to generate a former president.
     # ====== YOUR CODE: ======
-    # hypers["batch_size"] = 64
-    # hypers["h_dim"] = 1024
-    # hypers["z_dim"] = 512
-    # hypers["x_sigma2"] = 2e-3
-    # hypers["learn_rate"] = 2e-4
-    # hypers["betas"] = (0.5,0.999)
-    hypers["batch_size"] = 8
-    hypers["h_dim"] = 512
+    hypers["batch_size"] = 32
+    hypers["h_dim"] = 256
     hypers["z_dim"] = 16
-    hypers["x_sigma2"] = 1.0
+    hypers["x_sigma2"] = 0.0025
     hypers["learn_rate"] = 2e-4
     hypers["betas"] = (0.5,0.999)
     # ========================

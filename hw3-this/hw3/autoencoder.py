@@ -19,7 +19,7 @@ class EncoderCNN(nn.Module):
         #  use pooling or only strides, use any activation functions,
         #  use BN or Dropout, etc.
         # ====== YOUR CODE: ======
-        hidden_dims = [in_channels, 128, 256, 512, out_channels]
+        hidden_dims = [in_channels, 64, 128, out_channels]
         for i in range(len(hidden_dims) - 1):
             modules.append(
                 nn.Conv2d(
@@ -55,7 +55,7 @@ class DecoderCNN(nn.Module):
         #  output should be a batch of images, with same dimensions as the
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        hidden_dims = [in_channels, 512, 256, 128, out_channels]
+        hidden_dims = [in_channels, 128, 64, out_channels]
         for i in range(len(hidden_dims) - 1):
             modules.append(
                 nn.ConvTranspose2d(
