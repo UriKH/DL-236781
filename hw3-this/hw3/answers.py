@@ -166,8 +166,10 @@ In the formulation of the VAE loss, we start by maximizing the evidence distribu
 """
 
 part2_q4 = r"""
-**Your answer:**
- 
+Note that the variance $\mathrm{Var}=\sigma^2$ must bea positive number.
+However, the output of the standard NN layer (linear) is unbounded. If the model accidently predicted a negative variance, the math will break as we cannot take the root of a negative number. 
+By modeling the logarithm we transform the problem into an unconstrained one! The NN will predict $y=\log (\simga^2)$.
+This way the network is free to output any number it wants and we could extract the variance like so: $Var=\sigma^2=e^y\geq 0$ (as requiered).
 """
 # ==============
 
